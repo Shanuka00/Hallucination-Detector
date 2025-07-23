@@ -1,0 +1,503 @@
+/**
+ * Hallucination Detection System - Frontend JavaScript
+ * Handles UI interactions, API calls, and graph visualization
+ */
+
+// Global variables
+let networkInstance = null;
+let currentAnalysis = null;
+let physicsEnabled = true;
+
+// API configuration
+const API_BASE_URL = 'http://localhost:8000';
+
+/**
+ * Initialize the application
+ */
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('Hallucination Detection System initialized');
+    setupEventListeners();
+    loadSampleData();
+});
+
+/**
+ * Setup event listeners
+ */
+function setupEventListeners() {
+    // Enter key in textarea triggers analysis
+    document.getElementById('user-question').addEventListener('keydown', function(e) {
+        if (e.ctrlKey && e.key === 'Enter') {
+            analyzeQuery();
+        }
+    });
+    
+    // Auto-resize textarea
+    const textarea = document.getElementById('user-question');
+    textarea.addEventListener('input', function() {
+        this.style.height = 'auto';
+        this.style.height = this.scrollHeight + 'px';
+    });
+}
+
+/**
+ * Load sample data for demonstration
+ */
+function loadSampleData() {
+    const sampleQuestions = [
+        "Tell me about Isaac Newton",
+        "What do you know about Albert Einstein?",
+        "Explain World War 2",
+        "Describe Python programming language",
+        "What is climate change?"
+    ];
+    
+    const questionField = document.getElementById('user-question');
+    const randomQuestion = sampleQuestions[Math.floor(Math.random() * sampleQuestions.length)];
+    questionField.placeholder = `e.g., ${randomQuestion}`;
+}
+
+/**
+ * Main function to analyze user query for hallucinations
+ */
+async function analyzeQuery() {
+    const question = document.getElementById('user-question').value.trim();
+    
+    if (!question) {
+        showError('Please enter a question to analyze.');
+        return;
+    }
+    
+    showLoading(true);
+    
+    try {
+        const response = await fetch(`${API_BASE_URL}/analyze`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ question: question })
+        });
+        
+        if (!response.ok) {
+            throw new Error(`Analysis failed: ${response.status} ${response.statusText}`);
+        }
+        
+        const result = await response.json();
+        currentAnalysis = result;
+        
+        // Update UI with results
+        displayLLMResponse(result.llm_response);
+        displaySummaryStats(result.summary);
+        displayClaims(result.claims);
+        displayGraph(result.graph_data);
+        
+    } catch (error) {
+        console.error('Analysis error:', error);
+        showError(`Failed to analyze query: ${error.message}`);
+    } finally {
+        showLoading(false);
+    }
+}
+
+/**
+ * Display the LLM response
+ */
+function displayLLMResponse(response) {
+    const responseElement = document.getElementById('llm-response');
+    responseElement.innerHTML = `<p>${response}</p>`;
+    responseElement.classList.remove('placeholder');
+}
+
+/**
+ * Display summary statistics
+ */
+function displaySummaryStats(summary) {
+    document.getElementById('total-claims').textContent = summary.high + summary.medium + summary.low;
+    document.getElementById('high-risk').textContent = summary.high;
+    document.getElementById('medium-risk').textContent = summary.medium;
+    document.getElementById('low-risk').textContent = summary.low;
+}
+
+/**
+ * Display claims analysis
+ */
+function displayClaims(claims) {
+    const container = document.getElementById('claims-table');
+    
+    if (claims.length === 0) {
+        container.innerHTML = `
+            <div class="placeholder-claims">
+                <p>No factual claims detected in the response.</p>
+            </div>
+        `;
+        return;
+    }
+    
+    let html = '';
+    
+    claims.forEach(claim => {
+        const riskLevel = getRiskLevel(claim);
+        const riskClass = riskLevel.toLowerCase().replace(' ', '-');
+        
+        html += `
+            <div class="claim-item ${riskClass}" data-claim-id="${claim.id}">
+                <div class="claim-header">
+                    <span class="claim-id">${claim.id}</span>
+                    <span class="risk-badge ${riskClass.split('-')[0]}">${riskLevel}</span>
+                </div>
+                <div class="claim-text">${claim.claim}</div>
+                <div class="verification-grid">
+                    <div class="verifier-response ${claim.claude_verification.toLowerCase()}">
+                        <strong>Claude:</strong> ${claim.claude_verification}
+                    </div>
+                    <div class="verifier-response ${claim.gemini_verification.toLowerCase()}">
+                        <strong>Gemini:</strong> ${claim.gemini_verification}
+                    </div>
+                </div>
+            </div>
+        `;
+    });
+    
+    container.innerHTML = html;
+    
+    // Add click handlers for claim items
+    document.querySelectorAll('.claim-item').forEach(item => {
+        item.addEventListener('click', function() {
+            const claimId = this.dataset.claimId;
+            highlightClaimInGraph(claimId);
+        });
+    });
+}
+
+/**
+ * Get risk level from claim verification
+ */
+function getRiskLevel(claim) {
+    const claude = claim.claude_verification.toLowerCase();
+    const gemini = claim.gemini_verification.toLowerCase();
+    
+    if (claude === 'no' && gemini === 'no') {
+        return 'High Risk';
+    } else if (claude === 'yes' && gemini === 'yes') {
+        return 'Low Risk';
+    } else {
+        return 'Medium Risk';
+    }
+}
+
+/**
+ * Display the verification graph
+ */
+function displayGraph(graphData) {
+    const container = document.getElementById('network-graph');
+    
+    // Clear any existing placeholder
+    container.innerHTML = '';
+    
+    if (!graphData.nodes || graphData.nodes.length === 0) {
+        container.innerHTML = `
+            <div class="graph-placeholder">
+                <p>🕸️ No graph data available</p>
+                <small>Claims will be visualized here when available</small>
+            </div>
+        `;
+        return;
+    }
+    
+    // Prepare data for vis.js
+    const nodes = new vis.DataSet(graphData.nodes.map(node => ({
+        id: node.id,
+        label: node.label,
+        title: node.title || node.label,
+        color: {
+            background: node.color,
+            border: darkenColor(node.color),
+            highlight: {
+                background: lightenColor(node.color),
+                border: node.color
+            }
+        },
+        size: node.size || 20,
+        shape: node.shape || 'dot',
+        font: node.font || { color: '#333', size: 12 }
+    })));
+    
+    const edges = new vis.DataSet(graphData.edges.map(edge => ({
+        from: edge.from,
+        to: edge.to,
+        color: edge.color || '#848484',
+        width: edge.width || 2,
+        dashes: edge.dashes || false,
+        title: edge.title || ''
+    })));
+    
+    const data = { nodes, edges };
+    
+    const options = {
+        physics: {
+            enabled: physicsEnabled,
+            stabilization: { iterations: 100 },
+            barnesHut: {
+                gravitationalConstant: -2000,
+                springConstant: 0.001,
+                springLength: 200
+            }
+        },
+        layout: {
+            improvedLayout: true
+        },
+        nodes: {
+            borderWidth: 2,
+            shadow: true,
+            font: {
+                size: 12,
+                color: '#333'
+            }
+        },
+        edges: {
+            shadow: true,
+            smooth: {
+                type: 'continuous'
+            }
+        },
+        interaction: {
+            hover: true,
+            tooltipDelay: 200,
+            hideEdgesOnDrag: true
+        }
+    };
+    
+    // Create network
+    networkInstance = new vis.Network(container, data, options);
+    
+    // Add event listeners
+    networkInstance.on('click', function(params) {
+        if (params.nodes.length > 0) {
+            const nodeId = params.nodes[0];
+            highlightClaim(nodeId);
+        }
+    });
+    
+    networkInstance.on('hoverNode', function(params) {
+        container.style.cursor = 'pointer';
+    });
+    
+    networkInstance.on('blurNode', function(params) {
+        container.style.cursor = 'default';
+    });
+}
+
+/**
+ * Highlight a claim in the graph
+ */
+function highlightClaimInGraph(claimId) {
+    if (networkInstance) {
+        networkInstance.selectNodes([claimId]);
+        networkInstance.focus(claimId, {
+            scale: 1.2,
+            animation: {
+                duration: 1000,
+                easingFunction: 'easeInOutQuad'
+            }
+        });
+    }
+}
+
+/**
+ * Highlight a claim in the claims list
+ */
+function highlightClaim(claimId) {
+    // Remove existing highlights
+    document.querySelectorAll('.claim-item').forEach(item => {
+        item.style.boxShadow = '';
+        item.style.transform = '';
+    });
+    
+    // Highlight the selected claim
+    const claimElement = document.querySelector(`[data-claim-id="${claimId}"]`);
+    if (claimElement) {
+        claimElement.style.boxShadow = '0 8px 25px rgba(102, 126, 234, 0.4)';
+        claimElement.style.transform = 'scale(1.02)';
+        claimElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+}
+
+/**
+ * Reset graph view
+ */
+function resetGraphView() {
+    if (networkInstance) {
+        networkInstance.fit({
+            animation: {
+                duration: 1000,
+                easingFunction: 'easeInOutQuad'
+            }
+        });
+    }
+}
+
+/**
+ * Toggle physics simulation
+ */
+function togglePhysics() {
+    physicsEnabled = !physicsEnabled;
+    if (networkInstance) {
+        networkInstance.setOptions({ physics: { enabled: physicsEnabled } });
+    }
+}
+
+/**
+ * Change graph layout
+ */
+function changeLayout() {
+    const layout = document.getElementById('layout-select').value;
+    
+    if (!networkInstance) return;
+    
+    const layoutOptions = {
+        'force-directed': {
+            physics: { enabled: true },
+            layout: { improvedLayout: true }
+        },
+        'hierarchical': {
+            physics: { enabled: false },
+            layout: {
+                hierarchical: {
+                    direction: 'UD',
+                    sortMethod: 'directed',
+                    nodeSpacing: 150,
+                    levelSeparation: 200
+                }
+            }
+        },
+        'circular': {
+            physics: { enabled: false },
+            layout: {
+                hierarchical: false
+            }
+        }
+    };
+    
+    const options = layoutOptions[layout] || layoutOptions['force-directed'];
+    networkInstance.setOptions(options);
+    
+    // Arrange in circle for circular layout
+    if (layout === 'circular' && currentAnalysis) {
+        const nodeIds = currentAnalysis.claims.map(claim => claim.id);
+        const positions = {};
+        const angleStep = (2 * Math.PI) / nodeIds.length;
+        const radius = 200;
+        
+        nodeIds.forEach((nodeId, index) => {
+            positions[nodeId] = {
+                x: radius * Math.cos(index * angleStep),
+                y: radius * Math.sin(index * angleStep)
+            };
+        });
+        
+        networkInstance.setPositions(positions);
+    }
+}
+
+/**
+ * Show/hide loading overlay
+ */
+function showLoading(show) {
+    const overlay = document.getElementById('loading-overlay');
+    overlay.style.display = show ? 'flex' : 'none';
+    
+    // Disable/enable the analyze button
+    const button = document.getElementById('analyze-btn');
+    button.disabled = show;
+    button.textContent = show ? '🔄 Analyzing...' : '🔍 Analyze Hallucinations';
+}
+
+/**
+ * Show error modal
+ */
+function showError(message) {
+    document.getElementById('error-message').textContent = message;
+    document.getElementById('error-modal').style.display = 'flex';
+}
+
+/**
+ * Close error modal
+ */
+function closeErrorModal() {
+    document.getElementById('error-modal').style.display = 'none';
+}
+
+/**
+ * Color utility functions
+ */
+function darkenColor(color) {
+    // Simple darkening by reducing brightness
+    const hex = color.replace('#', '');
+    const r = Math.max(0, parseInt(hex.substr(0, 2), 16) - 30);
+    const g = Math.max(0, parseInt(hex.substr(2, 2), 16) - 30);
+    const b = Math.max(0, parseInt(hex.substr(4, 2), 16) - 30);
+    return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
+}
+
+function lightenColor(color) {
+    // Simple lightening by increasing brightness
+    const hex = color.replace('#', '');
+    const r = Math.min(255, parseInt(hex.substr(0, 2), 16) + 30);
+    const g = Math.min(255, parseInt(hex.substr(2, 2), 16) + 30);
+    const b = Math.min(255, parseInt(hex.substr(4, 2), 16) + 30);
+    return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
+}
+
+/**
+ * Export current analysis data
+ */
+function exportAnalysis() {
+    if (!currentAnalysis) {
+        showError('No analysis data to export.');
+        return;
+    }
+    
+    const data = {
+        timestamp: new Date().toISOString(),
+        question: currentAnalysis.original_question,
+        analysis: currentAnalysis
+    };
+    
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `hallucination-analysis-${Date.now()}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+}
+
+// Keyboard shortcuts
+document.addEventListener('keydown', function(e) {
+    if (e.ctrlKey) {
+        switch(e.key) {
+            case 'Enter':
+                e.preventDefault();
+                analyzeQuery();
+                break;
+            case 'r':
+                e.preventDefault();
+                resetGraphView();
+                break;
+            case 's':
+                e.preventDefault();
+                exportAnalysis();
+                break;
+        }
+    }
+});
+
+// Add keyboard shortcuts info to the UI
+setTimeout(() => {
+    console.log('Keyboard shortcuts:');
+    console.log('Ctrl+Enter: Analyze query');
+    console.log('Ctrl+R: Reset graph view');
+    console.log('Ctrl+S: Export analysis');
+}, 1000);

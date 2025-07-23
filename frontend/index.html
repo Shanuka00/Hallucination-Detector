@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hallucination Detection System</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🧠 LLM Hallucination Detection System</h1>
+            <p>Multi-LLM verification using graph-based claim analysis</p>
+        </header>
+
+        <div class="main-content">
+            <!-- Left Panel: Input and Response -->
+            <div class="panel input-panel">
+                <h2>📝 Input & Response</h2>
+                
+                <div class="input-section">
+                    <label for="user-question">Ask a question:</label>
+                    <textarea 
+                        id="user-question" 
+                        placeholder="e.g., Tell me about Isaac Newton"
+                        rows="3"
+                    ></textarea>
+                    <button id="analyze-btn" onclick="analyzeQuery()">🔍 Analyze Hallucinations</button>
+                </div>
+
+                <div class="response-section">
+                    <h3>ChatGPT Response:</h3>
+                    <div id="llm-response" class="response-box">
+                        <p class="placeholder">Response will appear here...</p>
+                    </div>
+                </div>
+
+                <div class="summary-section">
+                    <h3>Analysis Summary:</h3>
+                    <div id="summary-stats" class="stats-grid">
+                        <div class="stat-card">
+                            <span class="stat-number" id="total-claims">0</span>
+                            <span class="stat-label">Total Claims</span>
+                        </div>
+                        <div class="stat-card high-risk">
+                            <span class="stat-number" id="high-risk">0</span>
+                            <span class="stat-label">High Risk</span>
+                        </div>
+                        <div class="stat-card medium-risk">
+                            <span class="stat-number" id="medium-risk">0</span>
+                            <span class="stat-label">Medium Risk</span>
+                        </div>
+                        <div class="stat-card low-risk">
+                            <span class="stat-number" id="low-risk">0</span>
+                            <span class="stat-label">Low Risk</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Center Panel: Claims Analysis -->
+            <div class="panel claims-panel">
+                <h2>🔍 Claim Verification</h2>
+                
+                <div class="claims-header">
+                    <span>Factual claims extracted and verified by multiple LLMs</span>
+                    <div class="legend">
+                        <span class="legend-item high-risk">🔴 High Risk</span>
+                        <span class="legend-item medium-risk">🟡 Medium Risk</span>
+                        <span class="legend-item low-risk">🟢 Low Risk</span>
+                    </div>
+                </div>
+
+                <div id="claims-table" class="claims-container">
+                    <div class="placeholder-claims">
+                        <p>📊 Claim analysis will appear here after processing...</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Panel: Graph Visualization -->
+            <div class="panel graph-panel">
+                <h2>📈 Verification Graph</h2>
+                
+                <div class="graph-controls">
+                    <button onclick="resetGraphView()">🔄 Reset View</button>
+                    <button onclick="togglePhysics()">⚡ Toggle Physics</button>
+                    <select id="layout-select" onchange="changeLayout()">
+                        <option value="force-directed">Force Directed</option>
+                        <option value="hierarchical">Hierarchical</option>
+                        <option value="circular">Circular</option>
+                    </select>
+                </div>
+
+                <div id="network-graph" class="graph-container">
+                    <div class="graph-placeholder">
+                        <p>🕸️ Verification graph will appear here</p>
+                        <small>Nodes represent claims, edges show verifier agreement</small>
+                    </div>
+                </div>
+
+                <div class="graph-legend">
+                    <h4>Graph Legend:</h4>
+                    <div class="legend-items">
+                        <div class="legend-row">
+                            <span class="node-example low-risk"></span>
+                            <span>Low Risk Claim</span>
+                        </div>
+                        <div class="legend-row">
+                            <span class="node-example medium-risk"></span>
+                            <span>Medium Risk Claim</span>
+                        </div>
+                        <div class="legend-row">
+                            <span class="node-example high-risk"></span>
+                            <span>High Risk Claim</span>
+                        </div>
+                        <div class="legend-row">
+                            <span class="verifier-example claude"></span>
+                            <span>Claude Verifier</span>
+                        </div>
+                        <div class="legend-row">
+                            <span class="verifier-example gemini"></span>
+                            <span>Gemini Verifier</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Loading Overlay -->
+        <div id="loading-overlay" class="loading-overlay" style="display: none;">
+            <div class="loading-content">
+                <div class="spinner"></div>
+                <p>Analyzing claims and building verification graph...</p>
+            </div>
+        </div>
+
+        <!-- Error Modal -->
+        <div id="error-modal" class="modal" style="display: none;">
+            <div class="modal-content">
+                <h3>❌ Analysis Error</h3>
+                <p id="error-message">An error occurred during analysis.</p>
+                <button onclick="closeErrorModal()">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        <p>🔬 Hallucination Detection System - Research Project 2025</p>
+        <p>Multi-LLM verification using graph-based claim analysis</p>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+</html>
