@@ -279,6 +279,16 @@ header p {
     color: #495057;
 }
 
+.wikipedia-badge {
+    background: #607D8B;
+    color: white;
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 0.8rem;
+    margin-left: 8px;
+    cursor: help;
+}
+
 .risk-badge {
     padding: 4px 12px;
     border-radius: 20px;
@@ -316,6 +326,11 @@ header p {
     background: rgba(255, 255, 255, 0.5);
 }
 
+/* Adjust grid for Wikipedia verification */
+.verification-grid:has(.verifier-response.wikipedia) {
+    grid-template-columns: 1fr 1fr 1fr;
+}
+
 .verifier-response {
     text-align: center;
     padding: 10px;
@@ -336,6 +351,42 @@ header p {
 .verifier-response.uncertain {
     background: #fff3cd;
     color: #856404;
+}
+
+/* Wikipedia verification styles */
+.verifier-response.wikipedia {
+    background: #e3f2fd;
+    color: #0d47a1;
+    border: 2px solid #2196F3;
+}
+
+.verifier-response.wikipedia.supports {
+    background: #e8f5e8;
+    color: #2e7d32;
+    border: 2px solid #4caf50;
+}
+
+.verifier-response.wikipedia.contradicts {
+    background: #ffebee;
+    color: #c62828;
+    border: 2px solid #f44336;
+}
+
+.verifier-response.wikipedia.unclear,
+.verifier-response.wikipedia.notfound {
+    background: #fff8e1;
+    color: #ef6c00;
+    border: 2px solid #ff9800;
+}
+
+.wikipedia-summary {
+    margin-top: 8px;
+    font-size: 0.85rem;
+    font-style: italic;
+    color: #666;
+    text-align: left;
+    max-height: 60px;
+    overflow-y: auto;
 }
 
 /* Graph Panel */

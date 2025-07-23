@@ -36,8 +36,18 @@ def build_hallucination_graph(claims: List[ClaimVerification]) -> Dict[str, Any]
             "risk_level": risk_level,
             "confidence": confidence,
             "claude_response": claim.claude_verification,
-            "gemini_response": claim.gemini_verification
+            "gemini_response": claim.gemini_verification,
+            "wikipedia_checked": claim.is_wikipedia_checked,
+            "wikipedia_status": claim.wikipedia_status if claim.is_wikipedia_checked else None,
+            "wikipedia_summary": claim.wikipedia_summary if claim.is_wikipedia_checked else None
         }
+        
+        # Add Wikipedia badge if checked
+        if claim.is_wikipedia_checked:
+            node["borderWidth"] = 3
+            node["borderColor"] = "#2196F3"  # Blue border for Wikipedia-checked claims
+            # Add a special icon/symbol in the label instead of using circularImage
+            node["label"] = f"📖 {claim.id}: {claim.claim[:45]}{'...' if len(claim.claim) > 45 else ''}"
         nodes.append(node)
         G.add_node(claim.id, **node)
     
@@ -59,7 +69,7 @@ def build_hallucination_graph(claims: List[ClaimVerification]) -> Dict[str, Any]
                 edges.append(edge)
                 G.add_edge(claim1.id, claim2.id, weight=agreement_score, **edge)
     
-    # Add verifier nodes
+    # Add verifier nodes (including Wikipedia)
     verifier_nodes = [
         {
             "id": "claude",
@@ -74,6 +84,14 @@ def build_hallucination_graph(claims: List[ClaimVerification]) -> Dict[str, Any]
             "label": "Gemini",
             "color": "#2196F3",  # Blue
             "size": 30,
+            "shape": "box",
+            "font": {"color": "white"}
+        },
+        {
+            "id": "wikipedia",
+            "label": "Wikipedia",
+            "color": "#607D8B",  # Blue Gray
+            "size": 25,
             "shape": "box",
             "font": {"color": "white"}
         }
@@ -103,6 +121,18 @@ def build_hallucination_graph(claims: List[ClaimVerification]) -> Dict[str, Any]
             "title": f"Gemini: {claim.gemini_verification}"
         }
         verifier_edges.append(gemini_edge)
+        
+        # Wikipedia connections (only for checked claims)
+        if claim.is_wikipedia_checked:
+            wikipedia_color = get_wikipedia_color(claim.wikipedia_status)
+            wikipedia_edge = {
+                "from": "wikipedia",
+                "to": claim.id,
+                "color": wikipedia_color,
+                "dashes": [5, 5],  # Different dash pattern
+                "title": f"Wikipedia: {claim.wikipedia_status}"
+            }
+            verifier_edges.append(wikipedia_edge)
     
     # Calculate graph metrics
     metrics = calculate_graph_metrics(G, claims)
@@ -149,6 +179,19 @@ def get_verification_color(response: str) -> str:
     }
     return color_map.get(response, "#9E9E9E")  # Gray for unknown
 
+def get_wikipedia_color(status: str) -> str:
+    """
+    Get color for Wikipedia verification status
+    """
+    color_map = {
+        "Supports": "#4CAF50",      # Green
+        "Contradicts": "#F44336",   # Red
+        "Unclear": "#FF9800",       # Orange
+        "NotFound": "#9E9E9E",      # Gray
+        "NotChecked": "#9E9E9E"     # Gray
+    }
+    return color_map.get(status, "#9E9E9E")  # Gray for unknown
+
 def calculate_graph_metrics(G: nx.Graph, claims: List[ClaimVerification]) -> Dict[str, Any]:
     """
     Calculate various graph metrics for analysis
@@ -161,6 +204,7 @@ def calculate_graph_metrics(G: nx.Graph, claims: List[ClaimVerification]) -> Dic
         "connected_components": nx.number_connected_components(subgraph),
         "average_clustering": nx.average_clustering(subgraph) if len(claim_nodes) > 0 else 0,
         "density": nx.density(subgraph),
+        "wikipedia_checks_performed": sum(1 for claim in claims if claim.is_wikipedia_checked)
     }
     
     # Risk distribution
@@ -220,7 +264,9 @@ def export_graph_data_for_cytoscape(claims: List[ClaimVerification]) -> Dict[str
                 "risk_level": risk_level,
                 "confidence": claim.get_confidence_score(),
                 "claude_response": claim.claude_verification,
-                "gemini_response": claim.gemini_verification
+                "gemini_response": claim.gemini_verification,
+                "wikipedia_checked": claim.is_wikipedia_checked,
+                "wikipedia_status": claim.wikipedia_status if claim.is_wikipedia_checked else None
             },
             "style": {
                 "background-color": color_map[risk_level],

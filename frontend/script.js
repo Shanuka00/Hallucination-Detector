@@ -112,10 +112,27 @@ function displayLLMResponse(response) {
  * Display summary statistics
  */
 function displaySummaryStats(summary) {
-    document.getElementById('total-claims').textContent = summary.high + summary.medium + summary.low;
+    document.getElementById('total-claims').textContent = summary.total_claims || (summary.high + summary.medium + summary.low);
     document.getElementById('high-risk').textContent = summary.high;
     document.getElementById('medium-risk').textContent = summary.medium;
     document.getElementById('low-risk').textContent = summary.low;
+    
+    // Add Wikipedia statistics if available
+    if (summary.wikipedia_checks !== undefined) {
+        // Update or create Wikipedia stats display
+        let wikipediaStats = document.getElementById('wikipedia-stats');
+        if (!wikipediaStats) {
+            const statsContainer = document.querySelector('.summary-stats');
+            wikipediaStats = document.createElement('div');
+            wikipediaStats.id = 'wikipedia-stats';
+            wikipediaStats.className = 'stat-item';
+            statsContainer.appendChild(wikipediaStats);
+        }
+        wikipediaStats.innerHTML = `
+            <span class="stat-label">Wikipedia Checks:</span>
+            <span class="stat-value">${summary.wikipedia_checks}</span>
+        `;
+    }
 }
 
 /**
@@ -144,6 +161,7 @@ function displayClaims(claims) {
                 <div class="claim-header">
                     <span class="claim-id">${claim.id}</span>
                     <span class="risk-badge ${riskClass.split('-')[0]}">${riskLevel}</span>
+                    ${claim.is_wikipedia_checked ? '<span class="wikipedia-badge" title="Verified with Wikipedia">📖 Wiki</span>' : ''}
                 </div>
                 <div class="claim-text">${claim.claim}</div>
                 <div class="verification-grid">
@@ -153,6 +171,12 @@ function displayClaims(claims) {
                     <div class="verifier-response ${claim.gemini_verification.toLowerCase()}">
                         <strong>Gemini:</strong> ${claim.gemini_verification}
                     </div>
+                    ${claim.is_wikipedia_checked ? `
+                    <div class="verifier-response wikipedia ${claim.wikipedia_status ? claim.wikipedia_status.toLowerCase() : 'unclear'}">
+                        <strong>Wikipedia:</strong> ${claim.wikipedia_status || 'Unclear'}
+                        ${claim.wikipedia_summary ? `<div class="wikipedia-summary">${claim.wikipedia_summary}</div>` : ''}
+                    </div>
+                    ` : ''}
                 </div>
             </div>
         `;
@@ -171,18 +195,50 @@ function displayClaims(claims) {
 
 /**
  * Get risk level from claim verification
+ * Now uses the backend's risk calculation which includes Wikipedia
  */
 function getRiskLevel(claim) {
+    // If the backend provides a risk level, use it (includes Wikipedia adjustment)
+    if (claim.final_risk_level) {
+        const riskMap = {
+            'low': 'Low Risk',
+            'medium': 'Medium Risk', 
+            'high': 'High Risk'
+        };
+        return riskMap[claim.final_risk_level] || 'Medium Risk';
+    }
+    
+    // Fallback to original logic for backward compatibility
     const claude = claim.claude_verification.toLowerCase();
     const gemini = claim.gemini_verification.toLowerCase();
     
+    // Base risk assessment
+    let baseRisk;
     if (claude === 'no' && gemini === 'no') {
-        return 'High Risk';
+        baseRisk = 'high';
     } else if (claude === 'yes' && gemini === 'yes') {
-        return 'Low Risk';
+        baseRisk = 'low';
     } else {
-        return 'Medium Risk';
+        baseRisk = 'medium';
     }
+    
+    // Adjust for Wikipedia if checked
+    if (claim.is_wikipedia_checked && claim.wikipedia_status) {
+        const wikiStatus = claim.wikipedia_status.toLowerCase();
+        if (wikiStatus === 'supports' && baseRisk === 'medium') {
+            baseRisk = 'low';
+        } else if (wikiStatus === 'contradicts') {
+            baseRisk = 'high';
+        }
+    }
+    
+    const riskMap = {
+        'low': 'Low Risk',
+        'medium': 'Medium Risk',
+        'high': 'High Risk'
+    };
+    
+    return riskMap[baseRisk] || 'Medium Risk';
 }
 
 /**
