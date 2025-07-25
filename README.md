@@ -445,4 +445,5 @@ This is an educational project, but suggestions and improvements are welcome! Pl
 
 py setup.py
 py -m uvicorn app:app --reload --host 0.0.0.0 --port 8000
+test
 http://localhost:8001/static/index.html
