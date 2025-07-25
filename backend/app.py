@@ -28,7 +28,9 @@ app.add_middleware(
 )
 
 # Mount static files for frontend
-app.mount("/static", StaticFiles(directory="../frontend"), name="static")
+import os
+frontend_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "frontend")
+app.mount("/static", StaticFiles(directory=frontend_path), name="static")
 
 class UserQuery(BaseModel):
     question: str
@@ -131,4 +133,4 @@ async def health_check():
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    uvicorn.run(app, host="0.0.0.0", port=8001)

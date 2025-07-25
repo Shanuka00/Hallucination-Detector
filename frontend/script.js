@@ -9,7 +9,7 @@ let currentAnalysis = null;
 let physicsEnabled = true;
 
 // API configuration
-const API_BASE_URL = 'http://localhost:8000';
+const API_BASE_URL = 'http://localhost:8001';
 
 /**
  * Initialize the application
@@ -122,15 +122,15 @@ function displaySummaryStats(summary) {
         // Update or create Wikipedia stats display
         let wikipediaStats = document.getElementById('wikipedia-stats');
         if (!wikipediaStats) {
-            const statsContainer = document.querySelector('.summary-stats');
+            const statsContainer = document.querySelector('.stats-grid');
             wikipediaStats = document.createElement('div');
             wikipediaStats.id = 'wikipedia-stats';
-            wikipediaStats.className = 'stat-item';
+            wikipediaStats.className = 'stat-card';
             statsContainer.appendChild(wikipediaStats);
         }
         wikipediaStats.innerHTML = `
-            <span class="stat-label">Wikipedia Checks:</span>
-            <span class="stat-value">${summary.wikipedia_checks}</span>
+            <span class="stat-number">${summary.wikipedia_checks}</span>
+            <span class="stat-label">Wikipedia Checks</span>
         `;
     }
 }
@@ -245,12 +245,14 @@ function getRiskLevel(claim) {
  * Display the verification graph
  */
 function displayGraph(graphData) {
+    console.log('Graph data received:', graphData);
     const container = document.getElementById('network-graph');
     
     // Clear any existing placeholder
     container.innerHTML = '';
     
     if (!graphData.nodes || graphData.nodes.length === 0) {
+        console.log('No graph nodes available');
         container.innerHTML = `
             <div class="graph-placeholder">
                 <p>🕸️ No graph data available</p>
@@ -292,12 +294,19 @@ function displayGraph(graphData) {
     const options = {
         physics: {
             enabled: physicsEnabled,
-            stabilization: { iterations: 100 },
+            stabilization: { 
+                iterations: 200,
+                updateInterval: 50
+            },
             barnesHut: {
                 gravitationalConstant: -2000,
                 springConstant: 0.001,
-                springLength: 200
-            }
+                springLength: 200,
+                damping: 0.9
+            },
+            maxVelocity: 20,
+            minVelocity: 0.1,
+            timestep: 0.3
         },
         layout: {
             improvedLayout: true
@@ -325,6 +334,11 @@ function displayGraph(graphData) {
     
     // Create network
     networkInstance = new vis.Network(container, data, options);
+    
+    // Stop physics after stabilization to prevent infinite animation
+    networkInstance.once('stabilizationIterationsDone', function() {
+        networkInstance.setOptions({ physics: false });
+    });
     
     // Add event listeners
     networkInstance.on('click', function(params) {
