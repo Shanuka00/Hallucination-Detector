@@ -5,7 +5,7 @@ A sophisticated web application that detects potential hallucinations in Large L
 ## 🧠 Overview
 
 This enhanced system analyzes LLM responses by:
-1. **LLM-Based Claim Extraction**: Using Claude/Gemini to extract factual claims (replaces regex-based extraction)
+1. **LLM-Based Claim Extraction**: Using LLM1/Gemini to extract factual claims (replaces regex-based extraction)
 2. **Batch Verification**: Verifying multiple claims in single API calls to reduce cost
 3. **Wikipedia Integration**: Cross-referencing medium-risk claims with Wikipedia for external validation
 4. **Enhanced Risk Calculation**: Three-tier risk assessment with Wikipedia-adjusted scoring
@@ -16,13 +16,13 @@ This enhanced system analyzes LLM responses by:
 ### ✨ Major Enhancements
 
 - **🤖 LLM-Powered Claim Extraction**: 
-  - Replaces rule-based regex with Claude/Gemini for more accurate claim identification
+  - Replaces rule-based regex with LLM1/Gemini for more accurate claim identification
   - Handles complex sentences and context-dependent facts
   - Prompt: *"Extract each factual claim in the following paragraph. Return them as a numbered list."*
 
 - **⚡ Batch Verification**:
   - Processes multiple claims in single API calls (cost reduction)
-  - Parallel verification with Claude and Gemini
+  - Parallel verification with LLM1 and Gemini
   - Prompt: *"Please verify the following claims. For each one, respond with 'Yes', 'No', or 'Uncertain' only."*
 
 - **📖 Wikipedia Integration**:
@@ -38,7 +38,7 @@ This enhanced system analyzes LLM responses by:
 
 - **📊 Upgraded Visualization**:
   - Wikipedia verification badges on claims
-  - Three-verifier graph (Claude + Gemini + Wikipedia)
+  - Three-verifier graph (LLM1 + Gemini + Wikipedia)
   - Enhanced risk coloring and confidence scoring
 
 ## 🏗️ Architecture
@@ -181,7 +181,7 @@ When deploying to production:
 ## 🎯 Enhanced Features
 
 ### Core Functionality
-- **LLM-Based Claim Extraction**: Advanced claim identification using Claude/Gemini
+- **LLM-Based Claim Extraction**: Advanced claim identification using LLM1/Gemini
 - **Batch Verification**: Cost-efficient multi-claim verification in single requests
 - **Wikipedia Cross-Referencing**: External fact-checking for uncertain claims
 - **Enhanced Risk Assessment**: Four-tier classification with external validation
@@ -195,19 +195,19 @@ When deploying to production:
   - Right: Interactive verification graph with Wikipedia nodes
   - Bottom: Enhanced statistics with Wikipedia check counts
 - **Wikipedia Badges**: Visual indicators for externally verified claims
-- **Enhanced Graph**: Shows three verification sources (Claude + Gemini + Wikipedia)
+- **Enhanced Graph**: Shows three verification sources (LLM1 + Gemini + Wikipedia)
 - **Responsive Design**: Improved mobile and tablet experience
 
 ### Enhanced Risk Calculation Algorithm
 ```python
 def get_risk_level(claim):
-    claude = claim.claude_verification.lower()
+    LLM1 = claim.LLM1_verification.lower()
     gemini = claim.gemini_verification.lower()
     
     # Base risk assessment from LLM verifiers
-    if claude == "no" and gemini == "no":
+    if LLM1 == "no" and gemini == "no":
         base_risk = "high"
-    elif claude == "yes" and gemini == "yes":
+    elif LLM1 == "yes" and gemini == "yes":
         base_risk = "low"
     else:
         base_risk = "medium"
@@ -235,10 +235,10 @@ def get_risk_level(claim):
 - C4: "He was also born in Berlin during his early years"
 
 **Enhanced Verification Results**:
-- **C1**: Claude: Yes, Gemini: Yes → ✅ **Low Risk**
-- **C2**: Claude: Yes, Gemini: Yes → ✅ **Low Risk**  
-- **C3**: Claude: Yes, Gemini: Uncertain → ⚠️ **Medium Risk** → Wikipedia: Supports → ✅ **Low Risk**
-- **C4**: Claude: No, Gemini: No → ❌ **High Risk**
+- **C1**: LLM1: Yes, Gemini: Yes → ✅ **Low Risk**
+- **C2**: LLM1: Yes, Gemini: Yes → ✅ **Low Risk**  
+- **C3**: LLM1: Yes, Gemini: Uncertain → ⚠️ **Medium Risk** → Wikipedia: Supports → ✅ **Low Risk**
+- **C4**: LLM1: No, Gemini: No → ❌ **High Risk**
 
 **Final Assessment**: 3 Low Risk, 0 Medium Risk, 1 High Risk (1 Wikipedia check performed)
 
@@ -265,7 +265,7 @@ The enhanced system uses a modular service approach:
 ```python
 # LLM Services (llm_services.py)
 - get_target_response()           # ChatGPT simulation/real
-- extract_claims_with_llm()       # Claude/Gemini claim extraction  
+- extract_claims_with_llm()       # LLM1/Gemini claim extraction  
 - verify_batch_with_llm()         # Batch verification with any LLM
 
 # Wikipedia Service (wikipedia_service.py)  
@@ -289,12 +289,12 @@ responses = {
     "albert einstein": "Einstein was born in 1879 in Munich. He won Nobel in 1922 for quantum mechanics."
 }
 
-# Claude verification (more conservative)
-def verify_with_claude(claim):
+# LLM1 verification (more conservative)
+def verify_with_LLM1(claim):
     if "berlin" in claim.lower() and "newton" in claim.lower():
         return "No"  # Newton wasn't born in Berlin
     
-# Gemini verification (sometimes differs from Claude)
+# Gemini verification (sometimes differs from LLM1)
 def verify_with_gemini(claim):
     if "1687" in claim and "gravity" in claim.lower():
         return "Uncertain"  # More cautious about the apple story
@@ -361,7 +361,7 @@ Analyze a user query for hallucinations.
     {
       "id": "C1",
       "claim": "Newton was born in 1643.",
-      "claude_verification": "Yes",
+      "LLM1_verification": "Yes",
       "gemini_verification": "Yes"
     }
   ],

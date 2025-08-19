@@ -18,7 +18,7 @@ class Config:
     USE_SIMULATION = os.getenv("USE_SIMULATION", "true").lower() == "true"
     
     # LLM Service Configuration
-    LLM_PROVIDER_FOR_EXTRACTION = os.getenv("LLM_PROVIDER_FOR_EXTRACTION", "claude")
+    LLM_PROVIDER_FOR_EXTRACTION = os.getenv("LLM_PROVIDER_FOR_EXTRACTION", "LLM1")
     
     # API Keys (loaded from environment variables)
     OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")

@@ -72,15 +72,15 @@ def build_hallucination_graph(claims: List[ClaimVerification]) -> Dict[str, Any]
     # Add verifier nodes (including Wikipedia)
     verifier_nodes = [
         {
-            "id": "claude",
-            "label": "Claude",
+            "id": "LLM1",
+            "label": "LLM1",
             "color": "#9C27B0",  # Purple
             "size": 30,
             "shape": "box",
             "font": {"color": "white"}
         },
         {
-            "id": "llm2",
+            "id": "LLM2",
             "label": "LLM2",
             "color": "#2196F3",  # Blue
             "size": 30,
@@ -103,7 +103,7 @@ def build_hallucination_graph(claims: List[ClaimVerification]) -> Dict[str, Any]
         # LLM1 connections
         llm1_color = get_verification_color(claim.llm1_verification)
         llm1_edge = {
-            "from": "llm1",
+            "from": "LLM1",
             "to": claim.id,
             "color": llm1_color,
             "dashes": True,
@@ -114,7 +114,7 @@ def build_hallucination_graph(claims: List[ClaimVerification]) -> Dict[str, Any]
         # LLM2 connections
         llm2_color = get_verification_color(claim.llm2_verification)
         llm2_edge = {
-            "from": "llm2",
+            "from": "LLM2",
             "to": claim.id,
             "color": llm2_color,
             "dashes": True,
@@ -263,7 +263,7 @@ def export_graph_data_for_cytoscape(claims: List[ClaimVerification]) -> Dict[str
                 "claim_text": claim.claim,
                 "risk_level": risk_level,
                 "confidence": claim.get_confidence_score(),
-                "claude_response": claim.claude_verification,
+                "LLM1_response": claim.LLM1_verification,
                 "gemini_response": claim.gemini_verification,
                 "wikipedia_checked": claim.is_wikipedia_checked,
                 "wikipedia_status": claim.wikipedia_status if claim.is_wikipedia_checked else None

@@ -10,7 +10,7 @@ from typing import List, Dict, Literal, Optional
 from enum import Enum
 
 class LLMProvider(str, Enum):
-    CLAUDE = "claude"
+    LLM1 = "LLM1"
     GEMINI = "gemini"
     CHATGPT = "chatgpt"
 
@@ -28,7 +28,7 @@ class LLMService:
         else:
             return self._get_real_chatgpt_response(prompt)
     
-    def extract_claims_with_llm(self, text: str, provider: LLMProvider = LLMProvider.CLAUDE) -> List[str]:
+    def extract_claims_with_llm(self, text: str, provider: LLMProvider = LLMProvider.LLM1) -> List[str]:
         """Extract factual claims using an LLM"""
         prompt = f"""Extract each factual claim in the following paragraph. Return them as a numbered list.
 Only include statements that can be verified as true or false facts (dates, names, places, events, etc.).
@@ -131,13 +131,13 @@ etc."""
     
     def _get_simulated_batch_verification(self, claims: List[str], provider: LLMProvider) -> List[str]:
         """Simulate batch verification responses"""
-        if provider == LLMProvider.CLAUDE:
-            return [self._simulate_claude_verification(claim) for claim in claims]
+        if provider == LLMProvider.LLM1:
+            return [self._simulate_LLM1_verification(claim) for claim in claims]
         else:  # GEMINI
             return [self._simulate_gemini_verification(claim) for claim in claims]
     
-    def _simulate_claude_verification(self, claim: str) -> str:
-        """Enhanced Claude simulation with more comprehensive knowledge"""
+    def _simulate_LLM1_verification(self, claim: str) -> str:
+        """Enhanced LLM1 simulation with more comprehensive knowledge"""
         claim_lower = claim.lower()
         
         # Newton facts
@@ -199,10 +199,10 @@ etc."""
         return "Uncertain"
     
     def _simulate_gemini_verification(self, claim: str) -> str:
-        """Gemini simulation - sometimes disagrees with Claude"""
+        """Gemini simulation - sometimes disagrees with LLM1"""
         claim_lower = claim.lower()
         
-        # Newton facts (with some differences from Claude)
+        # Newton facts (with some differences from LLM1)
         if "newton" in claim_lower:
             if "1643" in claim and "born" in claim_lower:
                 return "Yes"
@@ -228,30 +228,30 @@ etc."""
             elif "relativity" in claim_lower:
                 return "Yes"
         
-        # Use Claude's logic for most other cases but be more uncertain
-        claude_response = self._simulate_claude_verification(claim)
-        if claude_response == "Yes" and any(word in claim_lower for word in ["1687", "gravity", "discovered"]):
+        # Use LLM1's logic for most other cases but be more uncertain
+        LLM1_response = self._simulate_LLM1_verification(claim)
+        if LLM1_response == "Yes" and any(word in claim_lower for word in ["1687", "gravity", "discovered"]):
             return "Uncertain"  # Gemini is more cautious about discovery claims
         
-        return claude_response
+        return LLM1_response
     
     def _call_llm_api(self, prompt: str, provider: LLMProvider) -> str:
         """Make actual API calls to LLM providers"""
         # Placeholder for real API implementations
-        if provider == LLMProvider.CLAUDE:
-            return self._call_claude_api(prompt)
+        if provider == LLMProvider.LLM1:
+            return self._call_LLM1_api(prompt)
         elif provider == LLMProvider.GEMINI:
             return self._call_gemini_api(prompt)
         else:
             return self._call_chatgpt_api(prompt)
     
-    def _call_claude_api(self, prompt: str) -> str:
-        """Call Anthropic Claude API"""
-        # TODO: Implement real Claude API call
+    def _call_LLM1_api(self, prompt: str) -> str:
+        """Call Anthropic LLM1 API"""
+        # TODO: Implement real LLM1 API call
         # import anthropic
         # client = anthropic.Anthropic(api_key=self.api_key)
         # response = client.messages.create(...)
-        return "Simulated Claude response"
+        return "Simulated LLM1 response"
     
     def _call_gemini_api(self, prompt: str) -> str:
         """Call Google Gemini API"""

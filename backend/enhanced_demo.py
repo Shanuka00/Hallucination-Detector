@@ -27,31 +27,31 @@ def run_enhanced_demo():
     print(f"Response: {llm_response}")
     
     # Step 2: Extract claims using LLM
-    print("\n2️⃣ Extracting claims with LLM (Claude)...")
-    claims_text = llm_service.extract_claims_with_llm(llm_response, LLMProvider.CLAUDE)
+    print("\n2️⃣ Extracting claims with LLM (LLM1)...")
+    claims_text = llm_service.extract_claims_with_llm(llm_response, LLMProvider.LLM1)
     print(f"Extracted {len(claims_text)} claims:")
     for i, claim in enumerate(claims_text, 1):
         print(f"  {i}. {claim}")
     
     # Step 3: Batch verify claims
     print("\n3️⃣ Batch verifying claims...")
-    claude_verifications = llm_service.verify_batch_with_llm(claims_text, LLMProvider.CLAUDE)
+    LLM1_verifications = llm_service.verify_batch_with_llm(claims_text, LLMProvider.LLM1)
     gemini_verifications = llm_service.verify_batch_with_llm(claims_text, LLMProvider.GEMINI)
     
-    print("Claude verifications:", claude_verifications)
+    print("LLM1 verifications:", LLM1_verifications)
     print("Gemini verifications:", gemini_verifications)
     
     # Step 4: Create verification objects
     print("\n4️⃣ Creating claim verification objects...")
     verified_claims = []
     for i, claim in enumerate(claims_text):
-        claude_response = claude_verifications[i] if i < len(claude_verifications) else "Uncertain"
+        LLM1_response = LLM1_verifications[i] if i < len(LLM1_verifications) else "Uncertain"
         gemini_response = gemini_verifications[i] if i < len(gemini_verifications) else "Uncertain"
         
         verification = ClaimVerification(
             id=f"C{i+1}",
             claim=claim,
-            claude_verification=claude_response,
+            LLM1_verification=LLM1_response,
             gemini_verification=gemini_response
         )
         verified_claims.append(verification)
@@ -89,7 +89,7 @@ def run_enhanced_demo():
         risk_counts[risk_level] += 1
         
         print(f"\n📋 {claim.id}: {claim.claim[:60]}...")
-        print(f"   Claude: {claim.claude_verification} | Gemini: {claim.gemini_verification}")
+        print(f"   LLM1: {claim.LLM1_verification} | Gemini: {claim.gemini_verification}")
         if claim.is_wikipedia_checked:
             print(f"   Wikipedia: {claim.wikipedia_status} 📖")
         print(f"   🎯 Risk Level: {risk_level.upper()}")
@@ -139,17 +139,17 @@ def test_different_scenarios():
         
         # Quick analysis
         llm_response = llm_service.get_target_response(query)
-        claims = llm_service.extract_claims_with_llm(llm_response, LLMProvider.CLAUDE)
+        claims = llm_service.extract_claims_with_llm(llm_response, LLMProvider.LLM1)
         
         print(f"Response length: {len(llm_response)} chars")
         print(f"Claims extracted: {len(claims)}")
         
         if claims:
             # Test verification
-            claude_results = llm_service.verify_batch_with_llm(claims, LLMProvider.CLAUDE)
+            LLM1_results = llm_service.verify_batch_with_llm(claims, LLMProvider.LLM1)
             gemini_results = llm_service.verify_batch_with_llm(claims, LLMProvider.GEMINI)
             
-            agreement_count = sum(1 for c, g in zip(claude_results, gemini_results) if c == g)
+            agreement_count = sum(1 for c, g in zip(LLM1_results, gemini_results) if c == g)
             print(f"Verifier agreement: {agreement_count}/{len(claims)} claims")
         
         print()

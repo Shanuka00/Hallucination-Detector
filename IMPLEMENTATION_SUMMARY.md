@@ -3,13 +3,13 @@
 ## 🎯 Successfully Implemented Features
 
 ### 1. LLM-Based Claim Extraction
-- ✅ Replaced regex-based extraction with Claude/Gemini LLM services
+- ✅ Replaced regex-based extraction with LLM1/Gemini LLM services
 - ✅ Intelligent claim identification using structured prompts
 - ✅ Handles complex sentences and context-dependent facts
 
 ### 2. Batch Verification System
 - ✅ Cost-efficient batch processing of multiple claims
-- ✅ Single API calls to Claude and Gemini for verification
+- ✅ Single API calls to LLM1 and Gemini for verification
 - ✅ Parallel processing with fallback handling
 
 ### 3. Wikipedia Integration
@@ -49,7 +49,7 @@ User Query → target LLM → LLM Claim Extraction → Batch Verification → Wi
 ```
 
 ### Verification Pipeline
-1. **Extract Claims**: Claude/Gemini extracts factual statements
+1. **Extract Claims**: LLM1/Gemini extracts factual statements
 2. **Batch Verify**: Both LLMs verify all claims simultaneously
 3. **Risk Assessment**: Calculate initial risk based on LLM agreement
 4. **Wikipedia Check**: Cross-reference medium-risk claims

@@ -87,10 +87,10 @@ def verify_with_llm2(claim: str) -> Literal["Yes", "No", "Uncertain"]:
     """
     claim_lower = claim.lower()
     
-    # Newton-related facts (different perspective from Claude sometimes)
+    # Newton-related facts (different perspective from LLM1 sometimes)
     if "newton" in claim_lower or "he" in claim_lower:  # Handle pronoun references
         if "1643" in claim:
-            return "Yes"  # Agrees with Claude on birth year
+            return "Yes"  # Agrees with LLM1 on birth year
         elif "berlin" in claim_lower:
             return "No"   # Agrees Newton not born in Berlin
         elif "1687" in claim and ("gravity" in claim_lower or "gravitation" in claim_lower):
@@ -164,9 +164,9 @@ def get_verification_explanation(claim: str, model: str, response: str) -> str:
     Generate explanation for why a model gave a particular verification response
     """
     explanations = {
-        ("claude", "Yes"): f"Claude verified this claim as factually accurate based on historical records.",
-        ("claude", "No"): f"Claude identified this claim as factually incorrect.",
-        ("claude", "Uncertain"): f"Claude could not definitively verify this claim due to insufficient evidence or conflicting sources.",
+        ("LLM1", "Yes"): f"LLM1 verified this claim as factually accurate based on historical records.",
+        ("LLM1", "No"): f"LLM1 identified this claim as factually incorrect.",
+        ("LLM1", "Uncertain"): f"LLM1 could not definitively verify this claim due to insufficient evidence or conflicting sources.",
         ("gemini", "Yes"): f"Gemini confirmed this claim matches established facts.",
         ("gemini", "No"): f"Gemini determined this claim contains factual errors.",
         ("gemini", "Uncertain"): f"Gemini expressed uncertainty about this claim's accuracy."

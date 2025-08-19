@@ -12,7 +12,7 @@ HallucinationDetector/
 │   ├── app.py                     # Main FastAPI application ✅
 │   ├── models.py                  # Pydantic data models ✅
 │   ├── chatgpt_stub.py           # Simulated target LLM responses ✅
-│   ├── claim_verifier_stub.py    # Simulated Claude & Gemini ✅
+│   ├── claim_verifier_stub.py    # Simulated LLM1 & Gemini ✅
 │   ├── claim_extractor.py        # NLP claim extraction ✅
 │   ├── graph_builder.py          # NetworkX graph analysis ✅
 │   ├── requirements.txt          # Python dependencies ✅
@@ -31,8 +31,8 @@ HallucinationDetector/
 
 ### ✅ Multi-LLM Verification System
 - **Simulated ChatGPT**: Generates responses with intentional factual errors
-- **Simulated Claude**: Conservative fact-checking with domain knowledge
-- **Simulated Gemini**: Alternative perspective, sometimes disagrees with Claude
+- **Simulated LLM1**: Conservative fact-checking with domain knowledge
+- **Simulated Gemini**: Alternative perspective, sometimes disagrees with LLM1
 - **Smart Logic**: Handles pronouns, context, and domain-specific knowledge
 
 ### ✅ Intelligent Claim Extraction
@@ -72,7 +72,7 @@ Low Risk:    Both models say "Yes" → 🟢 Factually accurate
 
 **Claims Extracted & Verified:**
 
-| Claim | Claude | Gemini | Risk Level | Explanation |
+| Claim | LLM1 | Gemini | Risk Level | Explanation |
 |-------|--------|--------|------------|-------------|
 | C1: Newton was born in 1643 | ✅ Yes | ✅ Yes | 🟢 LOW | Both models confirm correct birth year |
 | C2: Discovered gravitation in 1687 (apple) | ✅ Yes | ⚠️ Uncertain | 🟡 MEDIUM | Apple story is apocryphal |
