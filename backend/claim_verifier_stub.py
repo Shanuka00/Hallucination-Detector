@@ -34,54 +34,23 @@ def verify_with_llm1(claim: str) -> Literal["Yes", "No", "Uncertain"]:
     
     # Einstein-related facts - Enhanced for comprehensive testing
     elif "einstein" in claim_lower:
-        if "1879" in claim and ("born" in claim_lower or "birth" in claim_lower):
-            return "Yes"  # Correct birth year
-        elif "march 14" in claim_lower and "1879" in claim:
-            return "Yes"  # Exact birth date
-        elif "munich" in claim_lower and ("born" in claim_lower or "birth" in claim_lower):
-            return "No"   # Einstein was born in Ulm, not Munich
-        elif "ulm" in claim_lower and ("born" in claim_lower or "birth" in claim_lower):
-            return "Yes"  # Correct birthplace
-        elif "hermann" in claim_lower and ("father" in claim_lower or "parent" in claim_lower):
-            return "Yes"  # Correct father's name
-        elif "pauline" in claim_lower and ("mother" in claim_lower or "parent" in claim_lower):
-            return "Yes"  # Correct mother's name
-        elif "1905" in claim and ("miracle" in claim_lower or "annus mirabilis" in claim_lower or "revolutionary" in claim_lower):
-            return "Yes"  # Miracle year
-        elif "special relativity" in claim_lower and "1905" in claim:
-            return "Yes"  # Special relativity year
-        elif "e=mc" in claim_lower.replace(" ", "").replace("²", "2"):
-            return "Yes"  # Famous equation
-        elif "general relativity" in claim_lower and "1915" in claim:
-            return "Yes"  # General relativity year
-        elif "1922" in claim and "nobel" in claim_lower:
-            return "No"   # Einstein won Nobel in 1921, not 1922
-        elif "1921" in claim and "nobel" in claim_lower:
-            return "Yes"  # Correct Nobel Prize year
-        elif "photoelectric effect" in claim_lower and "nobel" in claim_lower:
-            return "Yes"  # Correct reason for Nobel Prize
-        elif "quantum mechanics" in claim_lower and "nobel" in claim_lower:
-            return "No"   # Won for photoelectric effect, not quantum mechanics
-        elif "princeton" in claim_lower and ("1933" in claim or "university" in claim_lower):
-            return "Yes"  # Joined Princeton in 1933
-        elif "1940" in claim and ("citizen" in claim_lower or "american" in claim_lower):
-            return "Yes"  # Became American citizen in 1940
-        elif "swiss" in claim_lower and "citizenship" in claim_lower:
-            return "Yes"  # Retained Swiss citizenship
+        # Specific claim-by-claim verification for demo pattern: yes/yes, yes/no, no/no, yes/uncertain, uncertain/uncertain, yes/yes, yes/yes
+        if "born on march 14, 1879, in ulm, germany" in claim_lower:
+            return "Yes"  # Claim 1: yes/yes - Correct birth details
+        elif "nobel prize in physics in 1922" in claim_lower and "quantum mechanics" in claim_lower:
+            return "No"   # Claim 2: yes/no - Wrong year and reason for Nobel Prize
+        elif "born in munich, germany, in 1885" in claim_lower:
+            return "No"   # Claim 3: no/no - Wrong birth location and year
+        elif "general theory of relativity in 1915" in claim_lower:
+            return "Yes"  # Claim 4: yes/uncertain - Correct theory and year
+        elif "american citizen" in claim_lower and "swiss citizenship" in claim_lower:
+            return "Uncertain"  # Claim 5: uncertain/uncertain - Complex citizenship details
         elif "god does not play dice" in claim_lower:
-            return "Yes"  # Famous quote about quantum mechanics
-        elif "1955" in claim and ("died" in claim_lower or "death" in claim_lower):
-            return "Yes"  # Correct death year
-        elif "april 18" in claim_lower and "1955" in claim:
-            return "Yes"  # Exact death date
-        elif "princeton" in claim_lower and ("died" in claim_lower or "death" in claim_lower):
-            return "Yes"  # Died in Princeton
-        elif "76" in claim and ("age" in claim_lower or "years old" in claim_lower):
-            return "Yes"  # Correct age at death
-        elif "abdominal aortic aneurysm" in claim_lower:
-            return "Yes"  # Correct cause of death
-        elif "brain" in claim_lower and ("preserved" in claim_lower or "study" in claim_lower):
-            return "Yes"  # Brain was preserved
+            return "Yes"  # Claim 6: yes/yes - Famous correct quote
+        elif "died on april 18, 1955, in princeton" in claim_lower:
+            return "Yes"  # Claim 7: yes/yes - Correct death details
+        elif "brain was preserved" in claim_lower:
+            return "Yes"  # Claim 8: yes/yes - Correct fact about brain preservation
     
     # World War 2 facts
     elif "world war" in claim_lower or "ww2" in claim_lower:
@@ -141,54 +110,23 @@ def verify_with_llm2(claim: str) -> Literal["Yes", "No", "Uncertain"]:
     
     # Einstein-related facts - Enhanced for comprehensive testing (LLM2 perspective)
     elif "einstein" in claim_lower:
-        if "1879" in claim and ("born" in claim_lower or "birth" in claim_lower):
-            return "Yes"  # Agrees on birth year
-        elif "march 14" in claim_lower and "1879" in claim:
-            return "Yes"  # Agrees on exact birth date
-        elif "munich" in claim_lower and ("born" in claim_lower or "birth" in claim_lower):
-            return "No"   # Agrees Einstein not born in Munich
-        elif "ulm" in claim_lower and ("born" in claim_lower or "birth" in claim_lower):
-            return "Yes"  # Agrees on correct birthplace
-        elif "hermann" in claim_lower and ("father" in claim_lower or "parent" in claim_lower):
-            return "Yes"  # Agrees on father's name
-        elif "pauline" in claim_lower and ("mother" in claim_lower or "parent" in claim_lower):
-            return "Uncertain"  # Less certain about mother's name
-        elif "1905" in claim and ("miracle" in claim_lower or "annus mirabilis" in claim_lower or "revolutionary" in claim_lower):
-            return "Yes"  # Agrees on miracle year
-        elif "special relativity" in claim_lower and "1905" in claim:
-            return "Yes"  # Agrees on special relativity year
-        elif "e=mc" in claim_lower.replace(" ", "").replace("²", "2"):
-            return "Yes"  # Agrees on famous equation
-        elif "general relativity" in claim_lower and "1915" in claim:
-            return "Yes"  # Agrees on general relativity year
-        elif "1922" in claim and "nobel" in claim_lower:
-            return "Uncertain"  # Less certain about exact Nobel year
-        elif "1921" in claim and "nobel" in claim_lower:
-            return "Yes"  # Agrees on correct Nobel Prize year
-        elif "photoelectric effect" in claim_lower and "nobel" in claim_lower:
-            return "Yes"  # Agrees on reason for Nobel Prize
-        elif "quantum mechanics" in claim_lower and "nobel" in claim_lower:
-            return "No"   # Agrees Nobel was not for quantum mechanics
-        elif "princeton" in claim_lower and ("1933" in claim or "university" in claim_lower):
-            return "Yes"  # Agrees on Princeton move
-        elif "1940" in claim and ("citizen" in claim_lower or "american" in claim_lower):
-            return "Uncertain"  # Less certain about citizenship details
-        elif "swiss" in claim_lower and "citizenship" in claim_lower:
-            return "Yes"  # Agrees on Swiss citizenship
+        # Specific claim-by-claim verification for demo pattern: yes/yes, yes/no, no/no, yes/uncertain, uncertain/uncertain, yes/yes, yes/yes
+        if "born on march 14, 1879, in ulm, germany" in claim_lower:
+            return "Yes"  # Claim 1: yes/yes - Agrees on correct birth details
+        elif "nobel prize in physics in 1922" in claim_lower and "quantum mechanics" in claim_lower:
+            return "No"   # Claim 2: yes/no - Disagrees, knows it was 1921 for photoelectric effect
+        elif "born in munich, germany, in 1885" in claim_lower:
+            return "No"   # Claim 3: no/no - Agrees this is wrong
+        elif "general theory of relativity in 1915" in claim_lower:
+            return "Uncertain"  # Claim 4: yes/uncertain - Less certain about exact year
+        elif "american citizen" in claim_lower and "swiss citizenship" in claim_lower:
+            return "Uncertain"  # Claim 5: uncertain/uncertain - Both unsure about citizenship details
         elif "god does not play dice" in claim_lower:
-            return "Yes"  # Agrees on famous quote
-        elif "1955" in claim and ("died" in claim_lower or "death" in claim_lower):
-            return "Yes"  # Agrees on death year
-        elif "april 18" in claim_lower and "1955" in claim:
-            return "Uncertain"  # Less certain about exact death date
-        elif "princeton" in claim_lower and ("died" in claim_lower or "death" in claim_lower):
-            return "Yes"  # Agrees he died in Princeton
-        elif "76" in claim and ("age" in claim_lower or "years old" in claim_lower):
-            return "Yes"  # Agrees on age at death
-        elif "abdominal aortic aneurysm" in claim_lower:
-            return "Uncertain"  # Less certain about medical details
-        elif "brain" in claim_lower and ("preserved" in claim_lower or "study" in claim_lower):
-            return "Yes"  # Agrees brain was preserved
+            return "Yes"  # Claim 6: yes/yes - Agrees on famous quote
+        elif "died on april 18, 1955, in princeton" in claim_lower:
+            return "Yes"  # Claim 7: yes/yes - Agrees on death details
+        elif "brain was preserved" in claim_lower:
+            return "Yes"  # Claim 8: yes/yes - Agrees on brain preservation
     
     # World War 2 facts
     elif "world war" in claim_lower:

@@ -13,40 +13,16 @@ def extract_claims_with_claimllm(text: str) -> List[str]:
     
     # Mock API response for Einstein question specifically
     if "einstein" in text.lower():
-        # Simulated ClaimLLM extracted claims with high precision
+        # Simulated ClaimLLM extracted claims with focused set for demonstration
         mock_claims = [
-            "Albert Einstein was born on March 14, 1879, in Munich, Germany.",
-            "Einstein's father Hermann was an engineer and salesman.",
-            "Einstein's mother Pauline was a pianist.",
-            "Einstein showed exceptional mathematical abilities during his early education in Munich.",
-            "Einstein was actually an excellent student, despite popular myths.",
-            "In 1894, Einstein's family moved to Italy.",
-            "Einstein completed his education in Switzerland at the Swiss Federal Polytechnic in Zurich.",
-            "Einstein's revolutionary work began in 1905, often called his 'miracle year'.",
-            "In 1905, Einstein published four groundbreaking papers.",
-            "Einstein's 1905 papers included his special theory of relativity.",
-            "Einstein introduced the famous equation E=mc² in his special relativity work.",
+            "Albert Einstein was born on March 14, 1879, in Ulm, Germany.",
+            "Einstein was awarded the Nobel Prize in Physics in 1922 for his work on quantum mechanics.",
+            "Einstein was born in Munich, Germany, in 1885.",
             "Einstein developed the general theory of relativity in 1915.",
-            "General relativity described gravity as the curvature of spacetime.",
-            "Einstein was awarded the Nobel Prize in Physics in 1922 for his explanation of quantum mechanics.",
-            "Einstein won the Nobel Prize for his contributions to theoretical physics.",
-            "Einstein later became a critic of quantum mechanics.",
+            "Einstein became an American citizen while retaining his Swiss citizenship.",
             "Einstein famously stated 'God does not play dice with the universe'.",
-            "In 1933, Einstein emigrated to the United States as the Nazi regime rose to power.",
-            "Einstein joined the Institute for Advanced Study at Princeton University in 1933.",
-            "Einstein spent his final years working on a unified field theory.",
-            "Einstein became an American citizen in 1940.",
-            "Einstein retained his Swiss citizenship while becoming American.",
-            "Einstein was known for his humanitarian efforts and political activism.",
-            "Einstein was a pacifist during World War I.",
-            "Einstein later supported the Allies in World War II.",
-            "Einstein advocated for civil rights in America.",
-            "Einstein was an outspoken critic of racism.",
             "Einstein died on April 18, 1955, in Princeton, New Jersey.",
-            "Einstein died at the age of 76.",
-            "Einstein died from an abdominal aortic aneurysm.",
-            "Einstein's brain was preserved for scientific study.",
-            "Einstein's work continues to influence modern physics, cosmology, and our understanding of the universe."
+            "Einstein's brain was preserved for scientific study after his death."
         ]
         return mock_claims
     
