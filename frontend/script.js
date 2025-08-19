@@ -87,6 +87,7 @@ async function analyzeQuery() {
         
         // Update UI with results
         displayLLMResponse(result.llm_response);
+        displayConfidenceAnalysis(result.confidence_analysis);
         displaySummaryStats(result.summary);
         displayClaims(result.claims);
         displayGraph(result.graph_data);
@@ -106,6 +107,108 @@ function displayLLMResponse(response) {
     const responseElement = document.getElementById('llm-response');
     responseElement.innerHTML = `<p>${response}</p>`;
     responseElement.classList.remove('placeholder');
+}
+
+/**
+ * Display confidence analysis
+ */
+function displayConfidenceAnalysis(confidenceData) {
+    const confidenceElement = document.getElementById('confidence-analysis');
+    
+    if (!confidenceData || confidenceData.total_claims === 0) {
+        confidenceElement.innerHTML = `
+            <div class="placeholder-confidence">
+                <p>🎯 No claims to analyze for confidence scoring</p>
+            </div>
+        `;
+        return;
+    }
+    
+    const overallConfidence = confidenceData.overall_confidence;
+    const weights = confidenceData.weights_config;
+    
+    // Determine assessment level
+    let assessmentClass = 'low';
+    let assessmentText = '🔴 LOW CONFIDENCE - Response likely contains significant hallucinations';
+    
+    if (overallConfidence >= 0.8) {
+        assessmentClass = 'high';
+        assessmentText = '🟢 HIGH CONFIDENCE - Response appears highly reliable';
+    } else if (overallConfidence >= 0.6) {
+        assessmentClass = 'medium';
+        assessmentText = '🟡 MEDIUM CONFIDENCE - Response has moderate reliability';
+    } else if (overallConfidence >= 0.4) {
+        assessmentClass = 'low-medium';
+        assessmentText = '🟠 LOW-MEDIUM CONFIDENCE - Response has concerning elements';
+    }
+    
+    let claimDetailsHtml = '';
+    if (confidenceData.claim_details && confidenceData.claim_details.length > 0) {
+        claimDetailsHtml = confidenceData.claim_details.map(claim => {
+            const confidence = claim.confidence;
+            let confClass = 'low-conf';
+            if (confidence >= 0.7) confClass = 'high-conf';
+            else if (confidence >= 0.5) confClass = 'medium-conf';
+            
+            const components = claim.components;
+            
+            return `
+                <div class="claim-confidence-item ${confClass}">
+                    <div class="claim-text">${claim.claim_id}: ${claim.claim_text}</div>
+                    <div class="confidence-scores">
+                        <div class="score-item">
+                            <span class="score-label">Cross-Model</span>
+                            <span class="score-value">${components.cross_model_score.toFixed(3)}</span>
+                        </div>
+                        <div class="score-item">
+                            <span class="score-label">External</span>
+                            <span class="score-value">${components.external_score.toFixed(3)}</span>
+                        </div>
+                        <div class="score-item">
+                            <span class="score-label">Context</span>
+                            <span class="score-value">${components.context_score.toFixed(3)}</span>
+                        </div>
+                        <div class="score-item">
+                            <span class="score-label">Final</span>
+                            <span class="score-value">${confidence.toFixed(3)}</span>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
+    
+    confidenceElement.innerHTML = `
+        <div class="confidence-header">
+            <div>
+                <span class="confidence-score">${overallConfidence.toFixed(3)}</span>
+                <div class="confidence-assessment ${assessmentClass}">${assessmentText}</div>
+            </div>
+        </div>
+        
+        <div class="confidence-config">
+            <div class="config-item">
+                <div class="config-label">α (Cross-Model)</div>
+                <div class="config-value">${weights.alpha}</div>
+            </div>
+            <div class="config-item">
+                <div class="config-label">β (External)</div>
+                <div class="config-value">${weights.beta}</div>
+            </div>
+            <div class="config-item">
+                <div class="config-label">γ (Context)</div>
+                <div class="config-value">${weights.gamma}</div>
+            </div>
+        </div>
+        
+        <div class="claim-confidence-list">
+            ${claimDetailsHtml}
+        </div>
+        
+        <div class="final-confidence">
+            Overall Confidence = Σ(Confidence_i × Weight_i) / Σ(Weight_i) = ${overallConfidence.toFixed(3)}
+        </div>
+    `;
 }
 
 /**

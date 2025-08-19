@@ -218,6 +218,153 @@ header p {
     color: #666;
 }
 
+/* Confidence Analysis Section */
+.confidence-container {
+    background: #f8f9fa;
+    border-radius: 10px;
+    padding: 20px;
+    margin-bottom: 20px;
+    border-left: 4px solid #6f42c1;
+}
+
+.placeholder-confidence {
+    text-align: center;
+    color: #666;
+    font-style: italic;
+}
+
+.confidence-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+    padding-bottom: 10px;
+    border-bottom: 2px solid #e9ecef;
+}
+
+.confidence-score {
+    font-size: 2rem;
+    font-weight: bold;
+    color: #6f42c1;
+}
+
+.confidence-assessment {
+    font-size: 0.9rem;
+    padding: 5px 10px;
+    border-radius: 15px;
+    font-weight: 500;
+}
+
+.confidence-assessment.high {
+    background: #d4edda;
+    color: #155724;
+}
+
+.confidence-assessment.medium {
+    background: #fff3cd;
+    color: #856404;
+}
+
+.confidence-assessment.low-medium {
+    background: #ffeaa7;
+    color: #d68910;
+}
+
+.confidence-assessment.low {
+    background: #f8d7da;
+    color: #721c24;
+}
+
+.confidence-config {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    margin-bottom: 15px;
+}
+
+.config-item {
+    background: #e9ecef;
+    padding: 8px;
+    border-radius: 6px;
+    text-align: center;
+    font-size: 0.85rem;
+}
+
+.config-label {
+    font-weight: bold;
+    color: #495057;
+}
+
+.config-value {
+    color: #6c757d;
+}
+
+.claim-confidence-list {
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.claim-confidence-item {
+    background: white;
+    border-radius: 8px;
+    padding: 12px;
+    margin-bottom: 10px;
+    border-left: 3px solid #6c757d;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.claim-confidence-item.high-conf {
+    border-left-color: #28a745;
+}
+
+.claim-confidence-item.medium-conf {
+    border-left-color: #fd7e14;
+}
+
+.claim-confidence-item.low-conf {
+    border-left-color: #dc3545;
+}
+
+.claim-text {
+    font-weight: 500;
+    margin-bottom: 8px;
+    color: #333;
+}
+
+.confidence-scores {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+    font-size: 0.8rem;
+}
+
+.score-item {
+    text-align: center;
+    padding: 4px;
+    background: #f8f9fa;
+    border-radius: 4px;
+}
+
+.score-label {
+    display: block;
+    font-weight: bold;
+    color: #495057;
+}
+
+.score-value {
+    color: #6c757d;
+}
+
+.final-confidence {
+    text-align: center;
+    padding: 10px;
+    background: linear-gradient(45deg, #667eea, #764ba2);
+    color: white;
+    border-radius: 6px;
+    margin-top: 15px;
+    font-weight: bold;
+}
+
 /* Claims Panel */
 .claims-header {
     margin-bottom: 20px;

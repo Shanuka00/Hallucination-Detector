@@ -17,9 +17,11 @@ from claim_verifier_stub import verify_with_llm1, verify_with_llm2
 from wikipedia_service import WikipediaService
 from graph_builder import build_hallucination_graph
 from models import ClaimVerification
+from confidence_scorer import ConfidenceScorer
 
 # Initialize services
 wikipedia_service = WikipediaService(use_simulation=True)
+confidence_scorer = ConfidenceScorer(alpha=0.4, beta=0.4, gamma=0.2)
 
 app = FastAPI(title="Enhanced Hallucination Detection API", version="2.0.0")
 
@@ -46,6 +48,7 @@ class AnalysisResponse(BaseModel):
     claims: List[ClaimVerification]
     graph_data: Dict[str, Any]
     summary: Dict[str, Any]  # Enhanced to include Wikipedia stats
+    confidence_analysis: Dict[str, Any]  # New: Detailed confidence scoring
 
 @app.get("/")
 async def root():
@@ -74,9 +77,17 @@ async def analyze_hallucination(query: UserQuery):
                 summary={
                     "high": 0, "medium": 0, "low": 0, 
                     "wikipedia_checks": 0,
+                    "total_claims": 0,
+                    "overall_confidence": 0.0,
                     "claimllm_processing_time": claimllm_result["metadata"]["processing_time_ms"],
                     "claimllm_confidence": claimllm_result["metadata"]["confidence"],
                     "claimllm_model": claimllm_result["metadata"]["model"]
+                },
+                confidence_analysis={
+                    "overall_confidence": 0.0,
+                    "total_claims": 0,
+                    "claim_details": [],
+                    "weights_config": {"alpha": 0.4, "beta": 0.4, "gamma": 0.2}
                 }
             )
         
@@ -107,10 +118,13 @@ async def analyze_hallucination(query: UserQuery):
                 claim_verification.is_wikipedia_checked = True
                 wikipedia_checks_count += 1
         
-        # Step 6: Build hallucination graph with enhanced data
+        # Step 6: Calculate advanced confidence scores
+        overall_confidence, confidence_analysis = confidence_scorer.calculate_overall_confidence(verified_claims)
+        
+        # Step 7: Build hallucination graph with enhanced data
         graph_data = build_hallucination_graph(verified_claims)
         
-        # Step 7: Generate enhanced summary statistics
+        # Step 8: Generate enhanced summary statistics
         risk_counts = {"high": 0, "medium": 0, "low": 0}
         for claim in verified_claims:
             risk_level = claim.get_risk_level()
@@ -121,7 +135,7 @@ async def analyze_hallucination(query: UserQuery):
             **risk_counts,
             "wikipedia_checks": wikipedia_checks_count,
             "total_claims": len(verified_claims),
-            "overall_confidence": sum(c.get_confidence_score() for c in verified_claims) / len(verified_claims) if verified_claims else 0,
+            "overall_confidence": overall_confidence,
             "claimllm_processing_time": claimllm_result["metadata"]["processing_time_ms"],
             "claimllm_confidence": claimllm_result["metadata"]["confidence"],
             "claimllm_model": claimllm_result["metadata"]["model"]
@@ -132,7 +146,8 @@ async def analyze_hallucination(query: UserQuery):
             llm_response=llm_response,
             claims=verified_claims,
             graph_data=graph_data,
-            summary=enhanced_summary
+            summary=enhanced_summary,
+            confidence_analysis=confidence_analysis
         )
     
     except Exception as e:

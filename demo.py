@@ -16,6 +16,17 @@ from claim_verifier_stub import verify_with_llm1, verify_with_llm2
 from models import ClaimVerification
 from graph_builder import build_hallucination_graph
 
+# Import confidence scoring system
+try:
+    from confidence_scorer import ConfidenceScorer, format_confidence_analysis
+    from wikipedia_service import WikipediaService
+except ImportError:
+    # Fallback if confidence_scorer is not available
+    print("Warning: Advanced confidence scoring not available")
+    ConfidenceScorer = None
+    format_confidence_analysis = None
+    WikipediaService = None
+
 def demonstrate_analysis(question):
     """
     Demonstrate the complete hallucination detection process
@@ -61,6 +72,14 @@ def demonstrate_analysis(question):
     print("5️⃣ CLAIM VERIFICATION:")
     verified_claims = []
     
+    # Initialize Wikipedia service if available
+    wiki_service = None
+    if WikipediaService:
+        try:
+            wiki_service = WikipediaService(use_simulation=True)
+        except:
+            wiki_service = None
+    
     for i, claim in enumerate(claims_text):
         llm1_response = verify_with_llm1(claim)
         llm2_response = verify_with_llm2(claim)
@@ -71,6 +90,17 @@ def demonstrate_analysis(question):
             llm1_verification=llm1_response,
             llm2_verification=llm2_response
         )
+        
+        # Check if we should verify with Wikipedia (for medium risk claims)
+        if wiki_service and verification.should_check_wikipedia():
+            try:
+                wiki_status = wiki_service.verify_claim_with_wikipedia(claim)
+                verification.wikipedia_status = wiki_status
+                verification.is_wikipedia_checked = True
+                print(f"   🌐 Wikipedia check for C{i+1}: {wiki_status}")
+            except Exception as e:
+                print(f"   ⚠️ Wikipedia check failed for C{i+1}: {e}")
+        
         verified_claims.append(verification)
         
         risk_level = verification.get_risk_level().upper()
@@ -87,6 +117,8 @@ def demonstrate_analysis(question):
         print(f"   C{i+1}: {claim}")
         print(f"       LLM1: {llm1_response}")
         print(f"       LLM2: {llm2_response}")
+        if verification.is_wikipedia_checked:
+            print(f"       Wikipedia: {verification.wikipedia_status}")
         print(f"       Risk Level: {risk_colors.get(risk_level, '❓')} {risk_level} RISK{reset_color}")
         print(f"       Confidence: {confidence:.2f}")
         print()
@@ -132,6 +164,24 @@ def demonstrate_analysis(question):
     print(f"   Graph Density: {metrics['density']:.2f}")
     print(f"   Risk Assessment: {metrics['risk_assessment']}")
     print()
+    
+    # Step 6: Advanced Confidence Scoring Analysis
+    if ConfidenceScorer and format_confidence_analysis:
+        print("8️⃣ ADVANCED CONFIDENCE SCORING:")
+        
+        # Initialize confidence scorer with standard weights
+        scorer = ConfidenceScorer(alpha=0.4, beta=0.4, gamma=0.2)
+        
+        # Calculate overall confidence and detailed analysis
+        overall_confidence, analysis = scorer.calculate_overall_confidence(verified_claims)
+        
+        # Format and display the analysis
+        confidence_report = format_confidence_analysis(overall_confidence, analysis)
+        print(confidence_report)
+        print()
+    else:
+        print("8️⃣ ADVANCED CONFIDENCE SCORING: Not available")
+        print()
 
 def run_demo():
     """

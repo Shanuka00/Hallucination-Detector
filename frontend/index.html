@@ -5,7 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Hallucination Detection System</title>
     <link rel="stylesheet" href="style.css">
-    <script src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
+    <!-- Vis.js for network visualization - using older stable version -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/vis/4.21.0/vis.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/vis/4.21.0/vis.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
@@ -34,6 +36,15 @@
                     <h3>Target LLM Response:</h3>
                     <div id="llm-response" class="response-box">
                         <p class="placeholder">Response will appear here...</p>
+                    </div>
+                </div>
+
+                <div class="summary-section">
+                    <h3>Confidence Analysis:</h3>
+                    <div id="confidence-analysis" class="confidence-container">
+                        <div class="placeholder-confidence">
+                            <p>🎯 Confidence scoring will appear here...</p>
+                        </div>
                     </div>
                 </div>
 
