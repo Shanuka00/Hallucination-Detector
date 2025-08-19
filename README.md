@@ -190,7 +190,7 @@ When deploying to production:
 
 ### User Interface Enhancements
 - **Four-Panel Layout**: 
-  - Left: Input and ChatGPT response
+  - Left: Input and target LLM response
   - Center: Detailed claim analysis with Wikipedia status
   - Right: Interactive verification graph with Wikipedia nodes
   - Bottom: Enhanced statistics with Wikipedia check counts
@@ -226,7 +226,7 @@ def get_risk_level(claim):
 
 **Input**: "Tell me about Isaac Newton"
 
-**ChatGPT Response**: "Isaac Newton was born in 1643 in Woolsthorpe, England. He formulated the laws of motion and universal gravitation, publishing his masterwork Principia Mathematica in 1687. Interestingly, he was also born in Berlin during his early years."
+**target LLM Response**: "Isaac Newton was born in 1643 in Woolsthorpe, England. He formulated the laws of motion and universal gravitation, publishing his masterwork Principia Mathematica in 1687. Interestingly, he was also born in Berlin during his early years."
 
 **LLM-Extracted Claims**:
 - C1: "Newton was born in 1643 in Woolsthorpe, England"
@@ -283,7 +283,7 @@ The enhanced system uses a modular service approach:
 The system uses hardcoded responses to simulate real LLM APIs:
 
 ```python
-# ChatGPT responses with intentional errors
+# Target LLM responses with intentional errors
 responses = {
     "isaac newton": "Newton was born in 1643. He discovered gravity in 1687. He was born in Berlin.",
     "albert einstein": "Einstein was born in 1879 in Munich. He won Nobel in 1922 for quantum mechanics."
@@ -444,6 +444,6 @@ This is an educational project, but suggestions and improvements are welcome! Pl
 - then run below one in terminal
 
 py setup.py
-py -m uvicorn app:app --reload --host 0.0.0.0 --port 8000
+py -m uvicorn app:app --reload --host 0.0.0.0 --port 8001
 test
 http://localhost:8001/static/index.html

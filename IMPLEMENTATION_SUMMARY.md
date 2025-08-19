@@ -45,7 +45,7 @@
 
 ### Input Processing
 ```
-User Query → ChatGPT Response → LLM Claim Extraction → Batch Verification → Wikipedia Check → Risk Assessment → Visualization
+User Query → target LLM → LLM Claim Extraction → Batch Verification → Wikipedia Check → Risk Assessment → Visualization
 ```
 
 ### Verification Pipeline

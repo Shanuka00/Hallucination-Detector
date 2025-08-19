@@ -190,6 +190,22 @@ header p {
     background: #f0fff4;
 }
 
+.stat-card.claimllm-info {
+    border-left-color: #6f42c1;
+    background: #f8f6ff;
+    text-align: left;
+}
+
+.claimllm-header {
+    margin-bottom: 8px;
+}
+
+.claimllm-details {
+    color: #666;
+    font-size: 0.85rem;
+    line-height: 1.4;
+}
+
 .stat-number {
     display: block;
     font-size: 1.5rem;

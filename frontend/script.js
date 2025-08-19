@@ -117,6 +117,28 @@ function displaySummaryStats(summary) {
     document.getElementById('medium-risk').textContent = summary.medium;
     document.getElementById('low-risk').textContent = summary.low;
     
+    // Add ClaimLLM statistics if available
+    if (summary.claimllm_model !== undefined) {
+        let claimllmStats = document.getElementById('claimllm-stats');
+        if (!claimllmStats) {
+            const statsContainer = document.querySelector('.stats-grid');
+            claimllmStats = document.createElement('div');
+            claimllmStats.id = 'claimllm-stats';
+            claimllmStats.className = 'stat-card claimllm-info';
+            statsContainer.appendChild(claimllmStats);
+        }
+        claimllmStats.innerHTML = `
+            <div class="claimllm-header">
+                <span class="stat-label">🤖 ClaimLLM Service</span>
+            </div>
+            <div class="claimllm-details">
+                <small>Model: ${summary.claimllm_model}</small><br>
+                <small>Processing: ${summary.claimllm_processing_time}ms</small><br>
+                <small>Confidence: ${(summary.claimllm_confidence * 100).toFixed(1)}%</small>
+            </div>
+        `;
+    }
+    
     // Add Wikipedia statistics if available
     if (summary.wikipedia_checks !== undefined) {
         // Update or create Wikipedia stats display
@@ -153,7 +175,7 @@ function displayClaims(claims) {
     let html = '';
     
     claims.forEach(claim => {
-        const riskLevel = getRiskLevel(claim);
+        const riskLevel = getRiskLevel(claim) || 'Medium Risk';
         const riskClass = riskLevel.toLowerCase().replace(' ', '-');
         
         html += `
@@ -165,11 +187,11 @@ function displayClaims(claims) {
                 </div>
                 <div class="claim-text">${claim.claim}</div>
                 <div class="verification-grid">
-                    <div class="verifier-response ${claim.claude_verification.toLowerCase()}">
-                        <strong>Claude:</strong> ${claim.claude_verification}
+                    <div class="verifier-response ${(claim.llm1_verification || 'uncertain').toLowerCase()}">
+                        <strong>LLM1:</strong> ${claim.llm1_verification || 'Uncertain'}
                     </div>
-                    <div class="verifier-response ${claim.gemini_verification.toLowerCase()}">
-                        <strong>Gemini:</strong> ${claim.gemini_verification}
+                    <div class="verifier-response ${(claim.llm2_verification || 'uncertain').toLowerCase()}">
+                        <strong>LLM2:</strong> ${claim.llm2_verification || 'Uncertain'}
                     </div>
                     ${claim.is_wikipedia_checked ? `
                     <div class="verifier-response wikipedia ${claim.wikipedia_status ? claim.wikipedia_status.toLowerCase() : 'unclear'}">
@@ -198,8 +220,11 @@ function displayClaims(claims) {
  * Now uses the backend's risk calculation which includes Wikipedia
  */
 function getRiskLevel(claim) {
+    // Add debugging to see what's in the claim
+    console.log('getRiskLevel called with claim:', claim);
+    
     // If the backend provides a risk level, use it (includes Wikipedia adjustment)
-    if (claim.final_risk_level) {
+    if (claim.final_risk_level && claim.final_risk_level !== null && claim.final_risk_level !== '') {
         const riskMap = {
             'low': 'Low Risk',
             'medium': 'Medium Risk', 
@@ -209,14 +234,22 @@ function getRiskLevel(claim) {
     }
     
     // Fallback to original logic for backward compatibility
-    const claude = claim.claude_verification.toLowerCase();
-    const gemini = claim.gemini_verification.toLowerCase();
+    console.log('Using fallback logic for claim:', claim.id);
+    
+    // Safety checks for verification fields
+    if (!claim.llm1_verification || !claim.llm2_verification) {
+        console.warn('Missing verification fields in claim:', claim);
+        return 'Medium Risk'; // Safe fallback
+    }
+    
+    const llm1 = (claim.llm1_verification || 'uncertain').toLowerCase();
+    const llm2 = (claim.llm2_verification || 'uncertain').toLowerCase();
     
     // Base risk assessment
     let baseRisk;
-    if (claude === 'no' && gemini === 'no') {
+    if (llm1 === 'no' && llm2 === 'no') {
         baseRisk = 'high';
-    } else if (claude === 'yes' && gemini === 'yes') {
+    } else if (llm1 === 'yes' && llm2 === 'yes') {
         baseRisk = 'low';
     } else {
         baseRisk = 'medium';
@@ -224,7 +257,7 @@ function getRiskLevel(claim) {
     
     // Adjust for Wikipedia if checked
     if (claim.is_wikipedia_checked && claim.wikipedia_status) {
-        const wikiStatus = claim.wikipedia_status.toLowerCase();
+        const wikiStatus = (claim.wikipedia_status || 'unclear').toLowerCase();
         if (wikiStatus === 'supports' && baseRisk === 'medium') {
             baseRisk = 'low';
         } else if (wikiStatus === 'contradicts') {

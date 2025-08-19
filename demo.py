@@ -10,9 +10,9 @@ import os
 backend_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'backend')
 sys.path.insert(0, backend_path)
 
-from chatgpt_stub import get_chatgpt_response
-from claim_extractor import extract_claims
-from claim_verifier_stub import verify_with_claude, verify_with_gemini
+from targetllm_stub import get_targetllm_response
+from claimllm_stub import extract_claims_with_claimllm, simulate_claimllm_api_call
+from claim_verifier_stub import verify_with_llm1, verify_with_llm2
 from models import ClaimVerification
 from graph_builder import build_hallucination_graph
 
@@ -30,14 +30,24 @@ def demonstrate_analysis(question):
     print(f"   {question}")
     print()
     
-    print("2️⃣ CHATGPT RESPONSE:")
-    llm_response = get_chatgpt_response(question)
+    print("2️⃣ TARGETLLM RESPONSE:")
+    llm_response = get_targetllm_response(question)
     print(f"   {llm_response}")
     print()
     
-    # Step 2: Extract claims
-    print("3️⃣ EXTRACTED FACTUAL CLAIMS:")
-    claims_text = extract_claims(llm_response)
+    # Step 2: Extract claims using ClaimLLM
+    print("3️⃣ CLAIMLLM API CALL FOR CLAIM EXTRACTION:")
+    claimllm_result = simulate_claimllm_api_call(llm_response)
+    claims_text = claimllm_result["claims"]
+    
+    print(f"   🔗 API Call Status: {claimllm_result['status']}")
+    print(f"   🤖 ClaimLLM Model: {claimllm_result['metadata']['model']}")
+    print(f"   ⏱️ Processing Time: {claimllm_result['metadata']['processing_time_ms']}ms")
+    print(f"   📊 Claims Extracted: {claimllm_result['total_claims_extracted']}")
+    print(f"   🎯 Extraction Confidence: {claimllm_result['metadata']['confidence']}")
+    print()
+    
+    print("4️⃣ EXTRACTED FACTUAL CLAIMS:")
     
     if not claims_text:
         print("   No factual claims detected.")
@@ -48,18 +58,18 @@ def demonstrate_analysis(question):
     print()
     
     # Step 3: Verify claims
-    print("4️⃣ CLAIM VERIFICATION:")
+    print("5️⃣ CLAIM VERIFICATION:")
     verified_claims = []
     
     for i, claim in enumerate(claims_text):
-        claude_response = verify_with_claude(claim)
-        gemini_response = verify_with_gemini(claim)
+        llm1_response = verify_with_llm1(claim)
+        llm2_response = verify_with_llm2(claim)
         
         verification = ClaimVerification(
             id=f"C{i+1}",
             claim=claim,
-            claude_verification=claude_response,
-            gemini_verification=gemini_response
+            llm1_verification=llm1_response,
+            llm2_verification=llm2_response
         )
         verified_claims.append(verification)
         
@@ -75,14 +85,14 @@ def demonstrate_analysis(question):
         reset_color = "\033[0m"
         
         print(f"   C{i+1}: {claim}")
-        print(f"       Claude: {claude_response}")
-        print(f"       Gemini: {gemini_response}")
+        print(f"       LLM1: {llm1_response}")
+        print(f"       LLM2: {llm2_response}")
         print(f"       Risk Level: {risk_colors.get(risk_level, '❓')} {risk_level} RISK{reset_color}")
         print(f"       Confidence: {confidence:.2f}")
         print()
     
     # Step 4: Generate summary
-    print("5️⃣ RISK ASSESSMENT SUMMARY:")
+    print("6️⃣ RISK ASSESSMENT SUMMARY:")
     
     risk_counts = {"high": 0, "medium": 0, "low": 0}
     for claim in verified_claims:
@@ -113,7 +123,7 @@ def demonstrate_analysis(question):
     print()
     
     # Step 5: Graph metrics
-    print("6️⃣ GRAPH ANALYSIS:")
+    print("7️⃣ GRAPH ANALYSIS:")
     graph_data = build_hallucination_graph(verified_claims)
     metrics = graph_data['metrics']
     

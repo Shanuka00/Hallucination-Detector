@@ -78,7 +78,7 @@ etc."""
             return self._parse_verification_responses(response, len(claims))
     
     def _get_simulated_chatgpt_response(self, prompt: str) -> str:
-        """Simulated ChatGPT responses with intentional errors for testing"""
+        """Simulated target LLM responses with intentional errors for testing"""
         prompt_lower = prompt.lower()
         
         # Pre-defined responses with hallucinations
@@ -268,10 +268,10 @@ etc."""
         # import openai
         # client = openai.OpenAI(api_key=self.api_key)
         # response = client.chat.completions.create(...)
-        return "Simulated ChatGPT response"
+        return "Simulated target LLM response"
     
     def _get_real_chatgpt_response(self, prompt: str) -> str:
-        """Get real ChatGPT response (placeholder)"""
+        """Get real target LLM response (placeholder)"""
         # For now, return simulation
         return self._get_simulated_chatgpt_response(prompt)
     

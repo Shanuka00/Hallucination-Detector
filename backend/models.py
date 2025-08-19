@@ -21,8 +21,8 @@ class WikipediaStatus(str, Enum):
 class ClaimVerification(BaseModel):
     id: str
     claim: str
-    claude_verification: str
-    gemini_verification: str
+    llm1_verification: str
+    llm2_verification: str
     wikipedia_status: Optional[str] = "NotChecked"
     wikipedia_summary: Optional[str] = None
     is_wikipedia_checked: bool = False
@@ -32,11 +32,11 @@ class ClaimVerification(BaseModel):
         """
         Determine hallucination risk based on verifier agreement and Wikipedia check
         """
-        claude = self.claude_verification.lower()
-        gemini = self.gemini_verification.lower()
+        llm1 = self.llm1_verification.lower()
+        llm2 = self.llm2_verification.lower()
         
         # Start with base risk assessment
-        base_risk = self._get_base_risk(claude, gemini)
+        base_risk = self._get_base_risk(llm1, llm2)
         
         # Apply Wikipedia adjustment if checked
         if self.is_wikipedia_checked and self.wikipedia_status:
@@ -44,20 +44,20 @@ class ClaimVerification(BaseModel):
         
         return base_risk
     
-    def _get_base_risk(self, claude: str, gemini: str) -> Literal["high", "medium", "low"]:
+    def _get_base_risk(self, llm1: str, llm2: str) -> Literal["high", "medium", "low"]:
         """Get base risk level from LLM verifiers"""
         # Both disagree (both say No) = High risk
-        if claude == "no" and gemini == "no":
+        if llm1 == "no" and llm2 == "no":
             return "high"
         
         # Mixed responses or uncertainty = Medium risk
-        if (claude == "no" and gemini in ["yes", "uncertain"]) or \
-           (gemini == "no" and claude in ["yes", "uncertain"]) or \
-           "uncertain" in [claude, gemini]:
+        if (llm1 == "no" and llm2 in ["yes", "uncertain"]) or \
+           (llm2 == "no" and llm1 in ["yes", "uncertain"]) or \
+           "uncertain" in [llm1, llm2]:
             return "medium"
         
         # Both agree (both say Yes) = Low risk
-        if claude == "yes" and gemini == "yes":
+        if llm1 == "yes" and llm2 == "yes":
             return "low"
         
         # Default to medium for any other cases
@@ -103,8 +103,8 @@ class ClaimVerification(BaseModel):
         Only check medium risk claims to potentially resolve uncertainty
         """
         base_risk = self._get_base_risk(
-            self.claude_verification.lower(),
-            self.gemini_verification.lower()
+            self.llm1_verification.lower(),
+            self.llm2_verification.lower()
         )
         return base_risk == "medium"
 

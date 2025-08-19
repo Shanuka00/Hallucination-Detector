@@ -10,11 +10,16 @@ from pydantic import BaseModel
 from typing import List, Dict, Any
 import json
 
-# Import new LLM services
-from llm_services import llm_service, LLMProvider
-from wikipedia_service import wikipedia_service
+# Import services
+from targetllm_stub import get_targetllm_response
+from claimllm_stub import extract_claims_with_claimllm, simulate_claimllm_api_call
+from claim_verifier_stub import verify_with_llm1, verify_with_llm2
+from wikipedia_service import WikipediaService
 from graph_builder import build_hallucination_graph
-from models import ClaimVerification, HallucinationResult
+from models import ClaimVerification
+
+# Initialize services
+wikipedia_service = WikipediaService(use_simulation=True)
 
 app = FastAPI(title="Enhanced Hallucination Detection API", version="2.0.0")
 
@@ -52,11 +57,12 @@ async def analyze_hallucination(query: UserQuery):
     Enhanced endpoint to analyze potential hallucinations using LLM extraction and verification
     """
     try:
-        # Step 1: Get target LLM response (ChatGPT simulation)
-        llm_response = llm_service.get_target_response(query.question)
+        # Step 1: Get target LLM response
+        llm_response = get_targetllm_response(query.question)
         
-        # Step 2: Extract factual claims using LLM (Claude)
-        claims_text = llm_service.extract_claims_with_llm(llm_response, LLMProvider.CLAUDE)
+        # Step 2: Extract factual claims using ClaimLLM
+        claimllm_result = simulate_claimllm_api_call(llm_response)
+        claims_text = claimllm_result["claims"]
         
         if not claims_text:
             # Fallback: no claims found
@@ -65,28 +71,30 @@ async def analyze_hallucination(query: UserQuery):
                 llm_response=llm_response,
                 claims=[],
                 graph_data={"nodes": [], "edges": [], "metrics": {}},
-                summary={"high": 0, "medium": 0, "low": 0, "wikipedia_checks": 0}
+                summary={
+                    "high": 0, "medium": 0, "low": 0, 
+                    "wikipedia_checks": 0,
+                    "claimllm_processing_time": claimllm_result["metadata"]["processing_time_ms"],
+                    "claimllm_confidence": claimllm_result["metadata"]["confidence"],
+                    "claimllm_model": claimllm_result["metadata"]["model"]
+                }
             )
         
-        # Step 3: Batch verify claims with both models
-        claude_verifications = llm_service.verify_batch_with_llm(claims_text, LLMProvider.CLAUDE)
-        gemini_verifications = llm_service.verify_batch_with_llm(claims_text, LLMProvider.GEMINI)
-        
-        # Step 4: Create claim verification objects
+        # Step 3: Verify claims with both LLMs
         verified_claims = []
         for i, claim in enumerate(claims_text):
-            claude_response = claude_verifications[i] if i < len(claude_verifications) else "Uncertain"
-            gemini_response = gemini_verifications[i] if i < len(gemini_verifications) else "Uncertain"
+            llm1_response = verify_with_llm1(claim)
+            llm2_response = verify_with_llm2(claim)
             
             verification = ClaimVerification(
                 id=f"C{i+1}",
                 claim=claim,
-                claude_verification=claude_response,
-                gemini_verification=gemini_response
+                llm1_verification=llm1_response,
+                llm2_verification=llm2_response
             )
             verified_claims.append(verification)
         
-        # Step 5: Check medium-risk claims with Wikipedia
+        # Step 4: Check medium-risk claims with Wikipedia
         wikipedia_checks_count = 0
         for claim_verification in verified_claims:
             if claim_verification.should_check_wikipedia():
@@ -108,12 +116,15 @@ async def analyze_hallucination(query: UserQuery):
             risk_level = claim.get_risk_level()
             risk_counts[risk_level] += 1
         
-        # Add Wikipedia statistics
+        # Add ClaimLLM and Wikipedia statistics
         enhanced_summary = {
             **risk_counts,
             "wikipedia_checks": wikipedia_checks_count,
             "total_claims": len(verified_claims),
-            "overall_confidence": sum(c.get_confidence_score() for c in verified_claims) / len(verified_claims) if verified_claims else 0
+            "overall_confidence": sum(c.get_confidence_score() for c in verified_claims) / len(verified_claims) if verified_claims else 0,
+            "claimllm_processing_time": claimllm_result["metadata"]["processing_time_ms"],
+            "claimllm_confidence": claimllm_result["metadata"]["confidence"],
+            "claimllm_model": claimllm_result["metadata"]["model"]
         }
         
         return AnalysisResponse(

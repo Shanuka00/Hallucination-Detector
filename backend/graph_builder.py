@@ -35,8 +35,8 @@ def build_hallucination_graph(claims: List[ClaimVerification]) -> Dict[str, Any]
             "size": 20 + (confidence * 20),  # Size based on confidence
             "risk_level": risk_level,
             "confidence": confidence,
-            "claude_response": claim.claude_verification,
-            "gemini_response": claim.gemini_verification,
+            "llm1_response": claim.llm1_verification,
+            "llm2_response": claim.llm2_verification,
             "wikipedia_checked": claim.is_wikipedia_checked,
             "wikipedia_status": claim.wikipedia_status if claim.is_wikipedia_checked else None,
             "wikipedia_summary": claim.wikipedia_summary if claim.is_wikipedia_checked else None
@@ -80,8 +80,8 @@ def build_hallucination_graph(claims: List[ClaimVerification]) -> Dict[str, Any]
             "font": {"color": "white"}
         },
         {
-            "id": "gemini",
-            "label": "Gemini",
+            "id": "llm2",
+            "label": "LLM2",
             "color": "#2196F3",  # Blue
             "size": 30,
             "shape": "box",
@@ -100,27 +100,27 @@ def build_hallucination_graph(claims: List[ClaimVerification]) -> Dict[str, Any]
     # Add edges from verifiers to claims
     verifier_edges = []
     for claim in claims:
-        # Claude connections
-        claude_color = get_verification_color(claim.claude_verification)
-        claude_edge = {
-            "from": "claude",
+        # LLM1 connections
+        llm1_color = get_verification_color(claim.llm1_verification)
+        llm1_edge = {
+            "from": "llm1",
             "to": claim.id,
-            "color": claude_color,
+            "color": llm1_color,
             "dashes": True,
-            "title": f"Claude: {claim.claude_verification}"
+            "title": f"LLM1: {claim.llm1_verification}"
         }
-        verifier_edges.append(claude_edge)
+        verifier_edges.append(llm1_edge)
         
-        # Gemini connections
-        gemini_color = get_verification_color(claim.gemini_verification)
-        gemini_edge = {
-            "from": "gemini",
+        # LLM2 connections
+        llm2_color = get_verification_color(claim.llm2_verification)
+        llm2_edge = {
+            "from": "llm2",
             "to": claim.id,
-            "color": gemini_color,
+            "color": llm2_color,
             "dashes": True,
-            "title": f"Gemini: {claim.gemini_verification}"
+            "title": f"LLM2: {claim.llm2_verification}"
         }
-        verifier_edges.append(gemini_edge)
+        verifier_edges.append(llm2_edge)
         
         # Wikipedia connections (only for checked claims)
         if claim.is_wikipedia_checked:
@@ -152,18 +152,18 @@ def calculate_agreement(claim1: ClaimVerification, claim2: ClaimVerification) ->
     """
     Calculate agreement score between two claims based on verifier responses
     """
-    # Compare Claude responses
-    claude_agreement = 1.0 if claim1.claude_verification == claim2.claude_verification else 0.0
+    # Compare LLM1 responses
+    llm1_agreement = 1.0 if claim1.llm1_verification == claim2.llm1_verification else 0.0
     
-    # Compare Gemini responses
-    gemini_agreement = 1.0 if claim1.gemini_verification == claim2.gemini_verification else 0.0
+    # Compare LLM2 responses
+    llm2_agreement = 1.0 if claim1.llm2_verification == claim2.llm2_verification else 0.0
     
     # Overall agreement is average
-    overall_agreement = (claude_agreement + gemini_agreement) / 2.0
+    overall_agreement = (llm1_agreement + llm2_agreement) / 2.0
     
     # Bonus for both being high confidence (both "Yes")
-    if (claim1.claude_verification == "Yes" and claim1.gemini_verification == "Yes" and
-        claim2.claude_verification == "Yes" and claim2.gemini_verification == "Yes"):
+    if (claim1.llm1_verification == "Yes" and claim1.llm2_verification == "Yes" and
+        claim2.llm1_verification == "Yes" and claim2.llm2_verification == "Yes"):
         overall_agreement = min(1.0, overall_agreement + 0.2)
     
     return overall_agreement

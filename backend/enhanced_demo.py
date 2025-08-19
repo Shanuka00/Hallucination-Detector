@@ -22,7 +22,7 @@ def run_enhanced_demo():
     print("-" * 40)
     
     # Step 1: Get target response
-    print("\n1️⃣ Getting ChatGPT response...")
+    print("\n1️⃣ Getting target LLM response...")
     llm_response = llm_service.get_target_response(test_query)
     print(f"Response: {llm_response}")
     
