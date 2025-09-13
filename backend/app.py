@@ -1,6 +1,6 @@
 """
 Hallucination Detection Web Application - Main FastAPI Backend
-Enhanced with LLM-based claim extraction and Wikipedia verification
+Enhanced with REAL LLM APIs and Multi-KG verification
 """
 
 from fastapi import FastAPI, HTTPException
@@ -10,10 +10,13 @@ from pydantic import BaseModel
 from typing import List, Dict, Any
 import json
 
-# Import services
-from targetllm_stub import get_targetllm_response
-from claimllm_stub import extract_claims_with_claimllm, simulate_claimllm_api_call
-from claim_verifier_stub import verify_with_llm1, verify_with_llm2
+# Import REAL services
+from real_llm_services import (
+    get_target_response,
+    extract_claims_with_llm,
+    verify_batch_with_llm1,
+    verify_batch_with_gemini
+)
 from multi_kg_service import MultiKGService
 from graph_builder import build_hallucination_graph
 from models import ClaimVerification
@@ -57,15 +60,14 @@ async def root():
 @app.post("/analyze", response_model=AnalysisResponse)
 async def analyze_hallucination(query: UserQuery):
     """
-    Enhanced endpoint to analyze potential hallucinations using LLM extraction and verification
+    Enhanced endpoint using REAL APIs: Mistral + OpenAI + Gemini + Multi-KG
     """
     try:
-        # Step 1: Get target LLM response
-        llm_response = get_targetllm_response(query.question)
+        # Step 1: Get target LLM response (Mistral)
+        llm_response = get_target_response(query.question)
         
-        # Step 2: Extract factual claims using ClaimLLM
-        claimllm_result = simulate_claimllm_api_call(llm_response)
-        claims_text = claimllm_result["claims"]
+        # Step 2: Extract factual claims using OpenAI
+        claims_text = extract_claims_with_llm(llm_response)
         
         if not claims_text:
             # Fallback: no claims found
@@ -78,10 +80,7 @@ async def analyze_hallucination(query: UserQuery):
                     "high": 0, "medium": 0, "low": 0, 
                     "wikipedia_checks": 0,
                     "total_claims": 0,
-                    "overall_confidence": 0.0,
-                    "claimllm_processing_time": claimllm_result["metadata"]["processing_time_ms"],
-                    "claimllm_confidence": claimllm_result["metadata"]["confidence"],
-                    "claimllm_model": claimllm_result["metadata"]["model"]
+                    "overall_confidence": 0.0
                 },
                 confidence_analysis={
                     "overall_confidence": 0.0,
@@ -91,11 +90,14 @@ async def analyze_hallucination(query: UserQuery):
                 }
             )
         
-        # Step 3: Verify claims with both LLMs
+        # Step 3: Verify claims with both real LLMs
+        llm1_verifications = verify_batch_with_llm1(claims_text)  # OpenAI o1-preview
+        llm2_verifications = verify_batch_with_gemini(claims_text)  # Gemini
+        
         verified_claims = []
         for i, claim in enumerate(claims_text):
-            llm1_response = verify_with_llm1(claim)
-            llm2_response = verify_with_llm2(claim)
+            llm1_response = llm1_verifications[i] if i < len(llm1_verifications) else "Uncertain"
+            llm2_response = llm2_verifications[i] if i < len(llm2_verifications) else "Uncertain"
             
             verification = ClaimVerification(
                 id=f"C{i+1}",
@@ -105,7 +107,7 @@ async def analyze_hallucination(query: UserQuery):
             )
             verified_claims.append(verification)
         
-        # Step 4: Check medium-risk claims with Wikipedia
+        # Step 4: Check medium-risk claims with Multi-KG external verification
         wikipedia_checks_count = 0
         for claim_verification in verified_claims:
             if claim_verification.should_check_wikipedia():
@@ -129,15 +131,16 @@ async def analyze_hallucination(query: UserQuery):
             risk_level = claim.get_risk_level()
             risk_counts[risk_level] += 1
         
-        # Add ClaimLLM and Wikipedia statistics
+        # Add Real API statistics
         enhanced_summary = {
             **risk_counts,
             "wikipedia_checks": wikipedia_checks_count,
             "total_claims": len(verified_claims),
             "overall_confidence": overall_confidence,
-            "claimllm_processing_time": claimllm_result["metadata"]["processing_time_ms"],
-            "claimllm_confidence": claimllm_result["metadata"]["confidence"],
-            "claimllm_model": claimllm_result["metadata"]["model"]
+            "extraction_model": "gpt-3.5-turbo",
+            "llm1_model": "o1-preview", 
+            "llm2_model": "gemini-1.5-flash",
+            "target_model": "mistral-small"
         }
         
         return AnalysisResponse(

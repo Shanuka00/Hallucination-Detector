@@ -14,20 +14,28 @@ load_dotenv()
 class Config:
     """Configuration class for the hallucination detection system"""
     
-    # API Mode Settings (can be overridden by .env file)
-    USE_SIMULATION = os.getenv("USE_SIMULATION", "true").lower() == "true"
+    # API Mode Settings (ALL SIMULATION DISABLED)
+    USE_SIMULATION = False
     
     # LLM Service Configuration
-    LLM_PROVIDER_FOR_EXTRACTION = os.getenv("LLM_PROVIDER_FOR_EXTRACTION", "LLM1")
+    LLM_PROVIDER_FOR_EXTRACTION = "OPENAI"
     
     # API Keys (loaded from environment variables)
     OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
     ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY", "")
     GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY", "")
+    MISTRAL_API_KEY = os.getenv("MISTRAL_API_KEY", "")
+    DEEPSEEK_API_KEY = os.getenv("DEEPSEEK_API_KEY", "")
+    
+    # Model Configuration
+    TARGET_MODEL = os.getenv("TARGET_MODEL", "mistral-small")
+    LLM1_MODEL = os.getenv("LLM1_MODEL", "o1-preview") 
+    LLM2_MODEL = os.getenv("LLM2_MODEL", "gemini-1.5-flash")
+    EXTRACTION_MODEL = os.getenv("EXTRACTION_MODEL", "gpt-3.5-turbo")
     
     # Wikipedia Service Settings
     WIKIPEDIA_ENABLED = os.getenv("WIKIPEDIA_ENABLED", "true").lower() == "true"
-    WIKIPEDIA_USE_SIMULATION = os.getenv("WIKIPEDIA_USE_SIMULATION", "true").lower() == "true"
+    WIKIPEDIA_USE_SIMULATION = False
     WIKIPEDIA_TIMEOUT = int(os.getenv("WIKIPEDIA_TIMEOUT", "10"))
 
     # Wikidata Service Settings
