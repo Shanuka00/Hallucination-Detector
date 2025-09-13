@@ -10,10 +10,52 @@ import os
 backend_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'backend')
 sys.path.insert(0, backend_path)
 
-from targetllm_stub import get_targetllm_response
 from config import config
-from claimllm_stub import extract_claims_with_claimllm, simulate_claimllm_api_call
-from claim_verifier_stub import verify_with_llm1, verify_with_llm2, bulk_verify_claims
+
+# Choose real implementations when simulation is disabled
+if not getattr(config, 'USE_SIMULATION', True):
+    # Use the real backend service wrappers
+    from real_llm_services import real_llm_service
+
+    def get_targetllm_response(question: str):
+        return real_llm_service.get_target_response(question)
+
+    def extract_claims_with_claimllm(text: str):
+        # Use Mistral for claim extraction instead of Gemini
+        return real_llm_service.extract_claims_with_mistral(text)
+
+    def simulate_claimllm_api_call(text: str):
+        # Provide the same metadata-shaped dict used by the demo when using the real extractor
+        start = __import__('time').time()
+        claims = real_llm_service.extract_claims_with_mistral(text)
+        elapsed_ms = int((__import__('time').time() - start) * 1000)
+        return {
+            "claims": claims,
+            "status": "ok",
+            "metadata": {
+                "model": getattr(config, 'EXTRACTION_MODEL', 'mistral-small'),
+                "processing_time_ms": elapsed_ms,
+                "confidence": 0.95
+            },
+            "total_claims_extracted": len(claims)
+        }
+
+    def verify_with_llm1(claim: str):
+        return real_llm_service.verify_claims_with_gemini([claim])[0]
+
+    def verify_with_llm2(claim: str):
+        return real_llm_service.verify_claims_with_deepseek([claim])[0]
+
+    def bulk_verify_claims(claims_list):
+        # Separate bulk verification: LLM1 (Gemini) and LLM2 (DeepSeek)
+        llm1_results = real_llm_service.verify_claims_with_gemini(claims_list)
+        llm2_results = real_llm_service.verify_claims_with_deepseek(claims_list)
+        return {"llm1": llm1_results, "llm2": llm2_results}
+else:
+    # Fallback to existing stubbed implementations for offline/demo mode
+    from targetllm_stub import get_targetllm_response
+    from claimllm_stub import extract_claims_with_claimllm, simulate_claimllm_api_call
+    from claim_verifier_stub import verify_with_llm1, verify_with_llm2, bulk_verify_claims
 from models import ClaimVerification
 from graph_builder import build_hallucination_graph
 
@@ -73,12 +115,23 @@ def demonstrate_analysis(question):
     # Bulk verify all claims in one API call
     print("5️⃣ BULK CLAIM VERIFICATION:")
     bulk_results = bulk_verify_claims(claims_text)
-    for i, status in enumerate(bulk_results, 1):
-        print(f"   C{i}: {status}")
+    
+    # Handle separate LLM1/LLM2 results when using real APIs
+    if isinstance(bulk_results, dict) and 'llm1' in bulk_results and 'llm2' in bulk_results:
+        print("   LLM1 (Gemini) Results:")
+        for i, status in enumerate(bulk_results['llm1'], 1):
+            print(f"     C{i}: {status}")
+        print("   LLM2 (DeepSeek) Results:")
+        for i, status in enumerate(bulk_results['llm2'], 1):
+            print(f"     C{i}: {status}")
+    else:
+        # Fallback for simulation mode
+        for i, status in enumerate(bulk_results, 1):
+            print(f"   C{i}: {status}")
     print()
     
     # Step 3: Verify claims
-    print("5️⃣ CLAIM VERIFICATION:")
+    print("6️⃣ CLAIM VERIFICATION:")
     verified_claims = []
     
     # Initialize external verification services using config flags
@@ -158,7 +211,7 @@ def demonstrate_analysis(question):
         print()
     
     # Step 4: Generate summary
-    print("6️⃣ RISK ASSESSMENT SUMMARY:")
+    print("7️⃣ RISK ASSESSMENT SUMMARY:")
     
     risk_counts = {"high": 0, "medium": 0, "low": 0}
     for claim in verified_claims:
@@ -189,7 +242,7 @@ def demonstrate_analysis(question):
     print()
     
     # Step 5: Graph metrics
-    print("7️⃣ GRAPH ANALYSIS:")
+    print("8️⃣ GRAPH ANALYSIS:")
     graph_data = build_hallucination_graph(verified_claims)
     metrics = graph_data['metrics']
     
@@ -201,7 +254,7 @@ def demonstrate_analysis(question):
     
     # Step 6: Advanced Confidence Scoring Analysis
     if ConfidenceScorer and format_confidence_analysis:
-        print("8️⃣ ADVANCED CONFIDENCE SCORING:")
+        print("9️⃣ ADVANCED CONFIDENCE SCORING:")
         
         # Initialize confidence scorer with standard weights
         scorer = ConfidenceScorer(alpha=0.4, beta=0.4, gamma=0.2)
@@ -214,7 +267,7 @@ def demonstrate_analysis(question):
         print(confidence_report)
         print()
     else:
-        print("8️⃣ ADVANCED CONFIDENCE SCORING: Not available")
+        print("9️⃣ ADVANCED CONFIDENCE SCORING: Not available")
         print()
 
 def run_demo():

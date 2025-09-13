@@ -32,6 +32,7 @@ class Config:
     LLM1_MODEL = os.getenv("LLM1_MODEL", "o1-preview") 
     LLM2_MODEL = os.getenv("LLM2_MODEL", "gemini-1.5-flash")
     EXTRACTION_MODEL = os.getenv("EXTRACTION_MODEL", "gpt-3.5-turbo")
+    CLAIM_EXTRACTION_API = os.getenv("CLAIM_EXTRACTION_API", "mistral")
     
     # Wikipedia Service Settings
     WIKIPEDIA_ENABLED = os.getenv("WIKIPEDIA_ENABLED", "true").lower() == "true"

@@ -80,6 +80,35 @@ etc."""
             print(f"Gemini extraction error: {e}")
             return ["Error extracting claims"]
     
+    def extract_claims_with_mistral(self, text: str) -> List[str]:
+        """Extract claims using Mistral API"""
+        prompt = f"""Extract each factual claim in the following paragraph. Return them as a numbered list.
+Only include statements that can be verified as true or false facts (dates, names, places, events, etc.).
+Exclude opinions, questions, or subjective statements.
+
+Text: {text}
+
+Format your response as:
+1. [First factual claim]
+2. [Second factual claim]
+3. [Third factual claim]
+etc."""
+
+        try:
+            response = self.mistral_client.chat.complete(
+                model=Config.TARGET_MODEL,
+                messages=[{"role": "user", "content": prompt}],
+                temperature=0.2,
+                max_tokens=400
+            )
+            
+            claims_text = response.choices[0].message.content
+            return self._parse_numbered_list(claims_text)
+            
+        except Exception as e:
+            print(f"Mistral extraction error: {e}")
+            return ["Error extracting claims"]
+    
     def verify_claims_with_openai(self, claims: List[str]) -> List[str]:
         """Verify claims using OpenAI o1-preview"""
         claims_text = "\n".join([f"{i+1}. {claim}" for i, claim in enumerate(claims)])
@@ -175,7 +204,6 @@ etc."""
                 temperature=0.1,
                 max_tokens=200
             )
-            print(f"DeepSeek raw response: {response}")
             
             verification_text = response.choices[0].message.content
             return self._parse_verification_responses(verification_text, len(claims))
@@ -236,9 +264,9 @@ def get_target_response(prompt: str) -> str:
     return real_llm_service.get_target_response(prompt)
 
 
-def extract_claims_with_llm(text: str, provider: str = "gemini") -> List[str]:
-    """Extract claims using Gemini"""
-    return real_llm_service.extract_claims_with_gemini(text)
+def extract_claims_with_llm(text: str, provider: str = "mistral") -> List[str]:
+    """Extract claims using Mistral"""
+    return real_llm_service.extract_claims_with_mistral(text)
 
 
 def verify_batch_with_llm1(claims: List[str]) -> List[str]:
@@ -249,6 +277,11 @@ def verify_batch_with_llm1(claims: List[str]) -> List[str]:
 def verify_batch_with_gemini(claims: List[str]) -> List[str]:
     """Verify claims with Gemini (LLM1)"""
     return real_llm_service.verify_claims_with_gemini(claims)
+
+
+def verify_batch_with_openai(claims: List[str]) -> List[str]:
+    """Verify claims with OpenAI (LLM1)"""
+    return real_llm_service.verify_claims_with_openai(claims)
 
 
 def verify_batch_with_deepseek(claims: List[str]) -> List[str]:

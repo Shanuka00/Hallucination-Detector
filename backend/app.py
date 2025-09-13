@@ -14,8 +14,8 @@ import json
 from real_llm_services import (
     get_target_response,
     extract_claims_with_llm,
-    verify_batch_with_llm1,
-    verify_batch_with_gemini
+    verify_batch_with_gemini,
+    verify_batch_with_deepseek
 )
 from multi_kg_service import MultiKGService
 from graph_builder import build_hallucination_graph
@@ -91,8 +91,8 @@ async def analyze_hallucination(query: UserQuery):
             )
         
         # Step 3: Verify claims with both real LLMs
-        llm1_verifications = verify_batch_with_llm1(claims_text)  # OpenAI o1-preview
-        llm2_verifications = verify_batch_with_gemini(claims_text)  # Gemini
+        llm1_verifications = verify_batch_with_gemini(claims_text)  # Gemini (LLM1)
+        llm2_verifications = verify_batch_with_deepseek(claims_text)  # DeepSeek (LLM2)
         
         verified_claims = []
         for i, claim in enumerate(claims_text):
