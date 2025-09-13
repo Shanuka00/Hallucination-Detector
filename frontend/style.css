@@ -446,7 +446,7 @@ header p {
     color: #495057;
 }
 
-.wikipedia-badge {
+.external-badge {
     background: #607D8B;
     color: white;
     padding: 4px 8px;
@@ -493,8 +493,8 @@ header p {
     background: rgba(255, 255, 255, 0.5);
 }
 
-/* Adjust grid for Wikipedia verification */
-.verification-grid:has(.verifier-response.wikipedia) {
+/* Adjust grid for External verification */
+.verification-grid:has(.verifier-response.external) {
     grid-template-columns: 1fr 1fr 1fr;
 }
 
@@ -520,33 +520,33 @@ header p {
     color: #856404;
 }
 
-/* Wikipedia verification styles */
-.verifier-response.wikipedia {
+/* External verification styles */
+.verifier-response.external {
     background: #e3f2fd;
     color: #0d47a1;
     border: 2px solid #2196F3;
 }
 
-.verifier-response.wikipedia.supports {
+.verifier-response.external.supports {
     background: #e8f5e8;
     color: #2e7d32;
     border: 2px solid #4caf50;
 }
 
-.verifier-response.wikipedia.contradicts {
+.verifier-response.external.contradicts {
     background: #ffebee;
     color: #c62828;
     border: 2px solid #f44336;
 }
 
-.verifier-response.wikipedia.unclear,
-.verifier-response.wikipedia.notfound {
+.verifier-response.external.unclear,
+.verifier-response.external.notfound {
     background: #fff8e1;
     color: #ef6c00;
     border: 2px solid #ff9800;
 }
 
-.wikipedia-summary {
+.external-summary {
     margin-top: 8px;
     font-size: 0.85rem;
     font-style: italic;

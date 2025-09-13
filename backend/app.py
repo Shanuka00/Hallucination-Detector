@@ -14,13 +14,13 @@ import json
 from targetllm_stub import get_targetllm_response
 from claimllm_stub import extract_claims_with_claimllm, simulate_claimllm_api_call
 from claim_verifier_stub import verify_with_llm1, verify_with_llm2
-from wikipedia_service import WikipediaService
+from multi_kg_service import MultiKGService
 from graph_builder import build_hallucination_graph
 from models import ClaimVerification
 from confidence_scorer import ConfidenceScorer
 
 # Initialize services
-wikipedia_service = WikipediaService(use_simulation=True)
+multi_kg_service = MultiKGService()
 confidence_scorer = ConfidenceScorer(alpha=0.4, beta=0.4, gamma=0.2)
 
 app = FastAPI(title="Enhanced Hallucination Detection API", version="2.0.0")
@@ -109,12 +109,11 @@ async def analyze_hallucination(query: UserQuery):
         wikipedia_checks_count = 0
         for claim_verification in verified_claims:
             if claim_verification.should_check_wikipedia():
-                # Perform Wikipedia check for medium-risk claims
-                wiki_result = wikipedia_service.verify_claim_with_wikipedia(claim_verification.claim)
-                wiki_summary_data = wikipedia_service.get_summary_from_wikipedia(claim_verification.claim)
+                # Perform Multi-KG external verification for medium-risk claims
+                external_result = multi_kg_service.verify_claim(claim_verification.claim)
                 
-                claim_verification.wikipedia_status = wiki_result
-                claim_verification.wikipedia_summary = wiki_summary_data.get("extract", "")[:200] + "..." if wiki_summary_data.get("extract") else None
+                claim_verification.wikipedia_status = external_result
+                claim_verification.wikipedia_summary = f"Multi-KG consensus: {external_result}"
                 claim_verification.is_wikipedia_checked = True
                 wikipedia_checks_count += 1
         

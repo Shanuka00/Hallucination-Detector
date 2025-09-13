@@ -4,7 +4,7 @@ Demonstrates the new LLM-based claim extraction and Wikipedia verification
 """
 
 from llm_services import llm_service, LLMProvider
-from wikipedia_service import wikipedia_service
+from multi_kg_service import MultiKGService
 from models import ClaimVerification
 from graph_builder import build_hallucination_graph
 import json
@@ -51,33 +51,33 @@ def run_enhanced_demo():
         verification = ClaimVerification(
             id=f"C{i+1}",
             claim=claim,
-            LLM1_verification=LLM1_response,
-            gemini_verification=gemini_response
+            llm1_verification=LLM1_response,
+            llm2_verification=gemini_response
         )
         verified_claims.append(verification)
     
-    # Step 5: Check medium-risk claims with Wikipedia
-    print("\n5️⃣ Checking medium-risk claims with Wikipedia...")
-    wikipedia_checks = 0
+    # Step 5: Check medium-risk claims with Multi-KG External Verification
+    print("\n5️⃣ Checking medium-risk claims with External Verification...")
+    multi_kg = MultiKGService()
+    external_checks = 0
     for claim_verification in verified_claims:
         initial_risk = claim_verification.get_risk_level()
         print(f"\n   Claim {claim_verification.id}: {initial_risk} risk")
         
         if claim_verification.should_check_wikipedia():
-            print(f"   → Checking with Wikipedia...")
-            wiki_result = wikipedia_service.verify_claim_with_wikipedia(claim_verification.claim)
-            wiki_summary_data = wikipedia_service.get_summary_from_wikipedia(claim_verification.claim)
+            print(f"   → Checking with External Knowledge Graphs...")
+            external_result = multi_kg.verify_claim(claim_verification.claim)
             
-            claim_verification.wikipedia_status = wiki_result
-            claim_verification.wikipedia_summary = wiki_summary_data.get("extract", "")[:200] + "..." if wiki_summary_data.get("extract") else None
+            claim_verification.wikipedia_status = external_result
+            claim_verification.wikipedia_summary = f"Multi-KG consensus: {external_result}"
             claim_verification.is_wikipedia_checked = True
-            wikipedia_checks += 1
+            external_checks += 1
             
             final_risk = claim_verification.get_risk_level()
-            print(f"   → Wikipedia says: {wiki_result}")
+            print(f"   → External verification says: {external_result}")
             print(f"   → Final risk: {final_risk}")
         else:
-            print(f"   → No Wikipedia check needed")
+            print(f"   → No external verification needed")
     
     # Step 6: Display results summary
     print("\n6️⃣ Final Results Summary:")
@@ -89,9 +89,9 @@ def run_enhanced_demo():
         risk_counts[risk_level] += 1
         
         print(f"\n📋 {claim.id}: {claim.claim[:60]}...")
-        print(f"   LLM1: {claim.LLM1_verification} | Gemini: {claim.gemini_verification}")
+        print(f"   LLM1: {claim.llm1_verification} | Gemini: {claim.llm2_verification}")
         if claim.is_wikipedia_checked:
-            print(f"   Wikipedia: {claim.wikipedia_status} 📖")
+            print(f"   External Verification: {claim.wikipedia_status} 🌐")
         print(f"   🎯 Risk Level: {risk_level.upper()}")
     
     print(f"\n📊 Overall Statistics:")
@@ -99,7 +99,7 @@ def run_enhanced_demo():
     print(f"   High Risk: {risk_counts['high']}")
     print(f"   Medium Risk: {risk_counts['medium']}")
     print(f"   Low Risk: {risk_counts['low']}")
-    print(f"   Wikipedia Checks: {wikipedia_checks}")
+    print(f"   External Verification Checks: {external_checks}")
     
     # Step 7: Build and display graph data
     print("\n7️⃣ Building hallucination graph...")
@@ -116,7 +116,7 @@ def run_enhanced_demo():
         "summary": {
             **risk_counts,
             "total_claims": len(verified_claims),
-            "wikipedia_checks": wikipedia_checks
+            "external_checks": external_checks
         }
     }
 

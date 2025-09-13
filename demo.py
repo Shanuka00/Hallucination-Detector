@@ -11,8 +11,9 @@ backend_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'backend
 sys.path.insert(0, backend_path)
 
 from targetllm_stub import get_targetllm_response
+from config import config
 from claimllm_stub import extract_claims_with_claimllm, simulate_claimllm_api_call
-from claim_verifier_stub import verify_with_llm1, verify_with_llm2
+from claim_verifier_stub import verify_with_llm1, verify_with_llm2, bulk_verify_claims
 from models import ClaimVerification
 from graph_builder import build_hallucination_graph
 
@@ -20,12 +21,14 @@ from graph_builder import build_hallucination_graph
 try:
     from confidence_scorer import ConfidenceScorer, format_confidence_analysis
     from wikipedia_service import WikipediaService
+    from multi_kg_service import MultiKGService
 except ImportError:
     # Fallback if confidence_scorer is not available
     print("Warning: Advanced confidence scoring not available")
     ConfidenceScorer = None
     format_confidence_analysis = None
     WikipediaService = None
+    MultiKGService = None
 
 def demonstrate_analysis(question):
     """
@@ -67,18 +70,35 @@ def demonstrate_analysis(question):
     for i, claim in enumerate(claims_text, 1):
         print(f"   C{i}: {claim}")
     print()
+    # Bulk verify all claims in one API call
+    print("5️⃣ BULK CLAIM VERIFICATION:")
+    bulk_results = bulk_verify_claims(claims_text)
+    for i, status in enumerate(bulk_results, 1):
+        print(f"   C{i}: {status}")
+    print()
     
     # Step 3: Verify claims
     print("5️⃣ CLAIM VERIFICATION:")
     verified_claims = []
     
-    # Initialize Wikipedia service if available
+    # Initialize external verification services using config flags
     wiki_service = None
-    if WikipediaService:
+    multi_kg_service = None
+    if WikipediaService and getattr(config, 'WIKIPEDIA_ENABLED', True):
         try:
-            wiki_service = WikipediaService(use_simulation=True)
-        except:
-            wiki_service = None
+            wiki_service = WikipediaService(use_simulation=getattr(config, 'WIKIPEDIA_USE_SIMULATION', True))
+        except Exception as e:
+            print(f"   ⚠️ Could not initialize Wikipedia service: {e}")
+    if MultiKGService:
+        try:
+            multi_kg_service = MultiKGService()
+            print(f"   ✅ Multi-KG service initialized (Wikidata + DBpedia)")
+        except Exception as e:
+            print(f"   ⚠️ Could not initialize Multi-KG service: {e}")
+
+    # Debug line to show which external verification is active
+    external_status = "Multi-KG (REAL)" if multi_kg_service else ("Wikipedia (REAL)" if (wiki_service and not wiki_service.use_simulation) else "SIM")
+    print(f"   External Verifier: {external_status}")
     
     for i, claim in enumerate(claims_text):
         llm1_response = verify_with_llm1(claim)
@@ -91,15 +111,29 @@ def demonstrate_analysis(question):
             llm2_verification=llm2_response
         )
         
-        # Check if we should verify with Wikipedia (for medium risk claims)
-        if wiki_service and verification.should_check_wikipedia():
-            try:
-                wiki_status = wiki_service.verify_claim_with_wikipedia(claim)
-                verification.wikipedia_status = wiki_status
-                verification.is_wikipedia_checked = True
-                print(f"   🌐 Wikipedia check for C{i+1}: {wiki_status}")
-            except Exception as e:
-                print(f"   ⚠️ Wikipedia check failed for C{i+1}: {e}")
+        # Check if we should verify externally for medium risk claims
+        if verification.should_check_wikipedia():
+            external_checked = False
+            # Try Multi-KG consensus first (research-grade approach)
+            if multi_kg_service:
+                try:
+                    kg_status = multi_kg_service.verify_claim(claim)
+                    print(f"   � Multi-KG consensus for C{i+1}: {kg_status}")
+                    # Map Multi-KG status into wikipedia_status field to reuse existing logic
+                    verification.wikipedia_status = kg_status
+                    verification.is_wikipedia_checked = True
+                    external_checked = True
+                except Exception as e:
+                    print(f"   ⚠️ Multi-KG check failed for C{i+1}: {e}")
+            # Fallback to Wikipedia if Multi-KG unavailable
+            if not external_checked and wiki_service:
+                try:
+                    wiki_status = wiki_service.verify_claim_with_wikipedia(claim)
+                    verification.wikipedia_status = wiki_status
+                    verification.is_wikipedia_checked = True
+                    print(f"   🌐 Wikipedia fallback for C{i+1}: {wiki_status}")
+                except Exception as e:
+                    print(f"   ⚠️ Wikipedia check failed for C{i+1}: {e}")
         
         verified_claims.append(verification)
         

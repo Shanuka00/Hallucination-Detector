@@ -173,3 +173,32 @@ def get_verification_explanation(claim: str, model: str, response: str) -> str:
     }
     
     return explanations.get((model.lower(), response), f"{model} responded: {response}")
+    
+def bulk_verify_claims(claims: list[str]) -> list[str]:
+    """
+    Simulate a bulk API call that verifies all claims at once.
+    Returns a list of strings: "Yes", "No", or "Uncertain" for each claim.
+    """
+    results: list[str] = []
+    for claim in claims:
+        # Call both single-claim verifiers to simulate combined logic
+        resp1 = verify_with_llm1(claim)
+        resp2 = verify_with_llm2(claim)
+        if resp1 == resp2:
+            results.append(resp1)
+        else:
+            # If they disagree, mark as Uncertain
+            results.append("Uncertain")
+    return results
+
+def bulk_verify_with_llm1(claims: list[str]) -> list[str]:
+    """
+    Simulate a bulk call to LLM1 for verifying multiple claims.
+    """
+    return [verify_with_llm1(claim) for claim in claims]
+
+def bulk_verify_with_llm2(claims: list[str]) -> list[str]:
+    """
+    Simulate a bulk call to LLM2 for verifying multiple claims.
+    """
+    return [verify_with_llm2(claim) for claim in claims]

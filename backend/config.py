@@ -29,6 +29,11 @@ class Config:
     WIKIPEDIA_ENABLED = os.getenv("WIKIPEDIA_ENABLED", "true").lower() == "true"
     WIKIPEDIA_USE_SIMULATION = os.getenv("WIKIPEDIA_USE_SIMULATION", "true").lower() == "true"
     WIKIPEDIA_TIMEOUT = int(os.getenv("WIKIPEDIA_TIMEOUT", "10"))
+
+    # Wikidata Service Settings
+    WIKIDATA_ENABLED = os.getenv("WIKIDATA_ENABLED", "true").lower() == "true"
+    WIKIDATA_USE_SIMULATION = os.getenv("WIKIDATA_USE_SIMULATION", "true").lower() == "true"
+    WIKIDATA_TIMEOUT = int(os.getenv("WIKIDATA_TIMEOUT", "15"))
     
     # Risk Assessment Settings
     WIKIPEDIA_CHECK_THRESHOLD = os.getenv("WIKIPEDIA_CHECK_THRESHOLD", "medium")
@@ -87,6 +92,8 @@ class Config:
         print("\n🔧 Configuration Status:")
         print(f"   Simulation Mode: {cls.USE_SIMULATION}")
         print(f"   Wikipedia Simulation: {cls.WIKIPEDIA_USE_SIMULATION}")
+        print(f"   Wikidata Enabled: {cls.WIKIDATA_ENABLED}")
+        print(f"   Wikidata Simulation: {cls.WIKIDATA_USE_SIMULATION}")
         print(f"   Debug Mode: {cls.DEBUG_MODE}")
         
         api_keys = cls.validate_api_keys()

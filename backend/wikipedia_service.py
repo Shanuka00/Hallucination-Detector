@@ -48,48 +48,14 @@ class WikipediaService:
         return self._analyze_claim_against_summary(claim_lower, summary_text, key_terms)
     
     def _get_simulated_wikipedia_summary(self, claim: str) -> Dict[str, any]:
-        """Simulate Wikipedia responses for testing"""
-        claim_lower = claim.lower()
-        
-        # Simulated Wikipedia responses
-        wiki_responses = {
-            "newton": {
-                "title": "Isaac Newton",
-                "extract": "Sir Isaac Newton was an English mathematician, physicist, astronomer, alchemist, theologian, and author who is widely recognised as one of the greatest mathematicians and physicists of all time. He was born on 4 January 1643 in Woolsthorpe-by-Colsterworth, Lincolnshire, England. Newton formulated the laws of motion and universal gravitation, which dominated scientists' view of the physical universe for the next three centuries. His book Philosophiæ Naturalis Principia Mathematica (Mathematical Principles of Natural Philosophy), first published in 1687, established classical mechanics. He died on 31 March 1727 in Kensington, London.",
-                "status": "found"
-            },
-            "einstein": {
-                "title": "Albert Einstein",
-                "extract": "Albert Einstein was a German-born theoretical physicist, widely acknowledged to be one of the greatest and most influential physicists of all time. Einstein is best known for developing the theory of relativity, but he also made important contributions to the development of the theory of quantum mechanics. He was born on 14 March 1879 in Ulm, in the Kingdom of Württemberg in the German Empire. Einstein received the 1921 Nobel Prize in Physics for his services to theoretical physics, and especially for his discovery of the law of the photoelectric effect.",
-                "status": "found"
-            },
-            "berlin": {
-                "title": "Berlin",
-                "extract": "Berlin is the capital and largest city of Germany by both area and population. Berlin is located in northeastern Germany, in an area of low-lying marshy woodlands with a mainly flat topography. The city has a history dating back to the 13th century.",
-                "status": "found"
-            },
-            "world war 2": {
-                "title": "World War II",
-                "extract": "World War II or the Second World War, often abbreviated as WWII or WW2, was a global war that lasted from 1939 to 1945. It involved the vast majority of the world's countries. The war ended with the surrender of Japan on 2 September 1945, following the atomic bombings of Hiroshima and Nagasaki in August 1945.",
-                "status": "found"
-            },
-            "python programming": {
-                "title": "Python (programming language)",
-                "extract": "Python is a high-level, general-purpose programming language. Its design philosophy emphasizes code readability with the use of significant indentation. Python was conceived in the late 1980s by Guido van Rossum and was first released in 1991. It was named after the British comedy troupe Monty Python. Python 3.0 was released on 3 December 2008.",
-                "status": "found"
-            }
-        }
-        
-        # Find matching topic
-        for key, response in wiki_responses.items():
-            if key in claim_lower:
-                return response
-        
-        # Default response for unrecognized topics
+        """
+        Deprecated: Use Multi-KG consensus system instead.
+        This fallback only exists for compatibility.
+        """
         return {
-            "title": "Unknown Topic",
-            "extract": "",
-            "status": "not_found"
+            "title": "Deprecated - Use Multi-KG",
+            "extract": "Wikipedia simulation is deprecated. Use MultiKGService for research-grade verification.",
+            "status": "deprecated"
         }
     
     def _get_real_wikipedia_summary(self, claim: str) -> Dict[str, any]:

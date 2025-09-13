@@ -19,6 +19,12 @@
 - ✅ Risk adjustment based on external evidence
 
 ### 4. Enhanced Risk Assessment
+### 3b. Wikidata Integration (New)
+- ✅ Structured knowledge graph fact verification (free, no API key)
+- ✅ Drop-in replacement fallback when Wikipedia unavailable
+- ✅ Simulation + real SPARQL endpoint modes
+- ✅ Reuses existing `wikipedia_status` field to avoid schema changes
+
 - ✅ Three-tier risk classification (High/Medium/Low)
 - ✅ Wikipedia-adjusted risk scoring
 - ✅ Confidence scoring with external validation boost

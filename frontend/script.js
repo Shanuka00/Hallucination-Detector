@@ -242,20 +242,20 @@ function displaySummaryStats(summary) {
         `;
     }
     
-    // Add Wikipedia statistics if available
+    // Add External Verification statistics if available
     if (summary.wikipedia_checks !== undefined) {
-        // Update or create Wikipedia stats display
-        let wikipediaStats = document.getElementById('wikipedia-stats');
-        if (!wikipediaStats) {
+        // Update or create External Verification stats display
+        let externalStats = document.getElementById('external-stats');
+        if (!externalStats) {
             const statsContainer = document.querySelector('.stats-grid');
-            wikipediaStats = document.createElement('div');
-            wikipediaStats.id = 'wikipedia-stats';
-            wikipediaStats.className = 'stat-card';
-            statsContainer.appendChild(wikipediaStats);
+            externalStats = document.createElement('div');
+            externalStats.id = 'external-stats';
+            externalStats.className = 'stat-card';
+            statsContainer.appendChild(externalStats);
         }
-        wikipediaStats.innerHTML = `
+        externalStats.innerHTML = `
             <span class="stat-number">${summary.wikipedia_checks}</span>
-            <span class="stat-label">Wikipedia Checks</span>
+            <span class="stat-label">External Checks</span>
         `;
     }
 }
@@ -286,7 +286,7 @@ function displayClaims(claims) {
                 <div class="claim-header">
                     <span class="claim-id">${claim.id}</span>
                     <span class="risk-badge ${riskClass.split('-')[0]}">${riskLevel}</span>
-                    ${claim.is_wikipedia_checked ? '<span class="wikipedia-badge" title="Verified with Wikipedia">📖 Wiki</span>' : ''}
+                    ${claim.is_wikipedia_checked ? '<span class="external-badge" title="Verified with External Sources">🌐 Ext</span>' : ''}
                 </div>
                 <div class="claim-text">${claim.claim}</div>
                 <div class="verification-grid">
@@ -297,9 +297,9 @@ function displayClaims(claims) {
                         <strong>LLM2:</strong> ${claim.llm2_verification || 'Uncertain'}
                     </div>
                     ${claim.is_wikipedia_checked ? `
-                    <div class="verifier-response wikipedia ${claim.wikipedia_status ? claim.wikipedia_status.toLowerCase() : 'unclear'}">
-                        <strong>Wikipedia:</strong> ${claim.wikipedia_status || 'Unclear'}
-                        ${claim.wikipedia_summary ? `<div class="wikipedia-summary">${claim.wikipedia_summary}</div>` : ''}
+                    <div class="verifier-response external ${claim.wikipedia_status ? claim.wikipedia_status.toLowerCase() : 'unclear'}">
+                        <strong>External:</strong> ${claim.wikipedia_status || 'Unclear'}
+                        ${claim.wikipedia_summary ? `<div class="external-summary">${claim.wikipedia_summary}</div>` : ''}
                     </div>
                     ` : ''}
                 </div>
@@ -320,13 +320,13 @@ function displayClaims(claims) {
 
 /**
  * Get risk level from claim verification
- * Now uses the backend's risk calculation which includes Wikipedia
+ * Now uses the backend's risk calculation which includes External verification
  */
 function getRiskLevel(claim) {
     // Add debugging to see what's in the claim
     console.log('getRiskLevel called with claim:', claim);
     
-    // If the backend provides a risk level, use it (includes Wikipedia adjustment)
+    // If the backend provides a risk level, use it (includes External verification adjustment)
     if (claim.final_risk_level && claim.final_risk_level !== null && claim.final_risk_level !== '') {
         const riskMap = {
             'low': 'Low Risk',
@@ -358,7 +358,7 @@ function getRiskLevel(claim) {
         baseRisk = 'medium';
     }
     
-    // Adjust for Wikipedia if checked
+    // Adjust for External verification if checked
     if (claim.is_wikipedia_checked && claim.wikipedia_status) {
         const wikiStatus = (claim.wikipedia_status || 'unclear').toLowerCase();
         if (wikiStatus === 'supports' && baseRisk === 'medium') {
