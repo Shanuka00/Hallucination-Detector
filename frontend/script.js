@@ -9,7 +9,7 @@ let currentAnalysis = null;
 let physicsEnabled = true;
 
 // API configuration
-const API_BASE_URL = 'http://localhost:8000';
+const API_BASE_URL = 'http://localhost:8001';
 
 /**
  * Initialize the application
@@ -87,6 +87,7 @@ async function analyzeQuery() {
         
         // Update UI with results
         displayLLMResponse(result.llm_response);
+        displayConfidenceAnalysis(result.confidence_analysis);
         displaySummaryStats(result.summary);
         displayClaims(result.claims);
         displayGraph(result.graph_data);
@@ -109,13 +110,154 @@ function displayLLMResponse(response) {
 }
 
 /**
+ * Display confidence analysis
+ */
+function displayConfidenceAnalysis(confidenceData) {
+    const confidenceElement = document.getElementById('confidence-analysis');
+    
+    if (!confidenceData || confidenceData.total_claims === 0) {
+        confidenceElement.innerHTML = `
+            <div class="placeholder-confidence">
+                <p>🎯 No claims to analyze for confidence scoring</p>
+            </div>
+        `;
+        return;
+    }
+    
+    const overallConfidence = confidenceData.overall_confidence;
+    const weights = confidenceData.weights_config;
+    
+    // Determine assessment level
+    let assessmentClass = 'low';
+    let assessmentText = '🔴 LOW CONFIDENCE - Response likely contains significant hallucinations';
+    
+    if (overallConfidence >= 0.8) {
+        assessmentClass = 'high';
+        assessmentText = '🟢 HIGH CONFIDENCE - Response appears highly reliable';
+    } else if (overallConfidence >= 0.6) {
+        assessmentClass = 'medium';
+        assessmentText = '🟡 MEDIUM CONFIDENCE - Response has moderate reliability';
+    } else if (overallConfidence >= 0.4) {
+        assessmentClass = 'low-medium';
+        assessmentText = '🟠 LOW-MEDIUM CONFIDENCE - Response has concerning elements';
+    }
+    
+    let claimDetailsHtml = '';
+    if (confidenceData.claim_details && confidenceData.claim_details.length > 0) {
+        claimDetailsHtml = confidenceData.claim_details.map(claim => {
+            const confidence = claim.confidence;
+            let confClass = 'low-conf';
+            if (confidence >= 0.7) confClass = 'high-conf';
+            else if (confidence >= 0.5) confClass = 'medium-conf';
+            
+            const components = claim.components;
+            
+            return `
+                <div class="claim-confidence-item ${confClass}">
+                    <div class="claim-text">${claim.claim_id}: ${claim.claim_text}</div>
+                    <div class="confidence-scores">
+                        <div class="score-item">
+                            <span class="score-label">Cross-Model</span>
+                            <span class="score-value">${components.cross_model_score.toFixed(3)}</span>
+                        </div>
+                        <div class="score-item">
+                            <span class="score-label">External</span>
+                            <span class="score-value">${components.external_score.toFixed(3)}</span>
+                        </div>
+                        <div class="score-item">
+                            <span class="score-label">Context</span>
+                            <span class="score-value">${components.context_score.toFixed(3)}</span>
+                        </div>
+                        <div class="score-item">
+                            <span class="score-label">Final</span>
+                            <span class="score-value">${confidence.toFixed(3)}</span>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
+    
+    confidenceElement.innerHTML = `
+        <div class="confidence-header">
+            <div>
+                <span class="confidence-score">${overallConfidence.toFixed(3)}</span>
+                <div class="confidence-assessment ${assessmentClass}">${assessmentText}</div>
+            </div>
+        </div>
+        
+        <div class="confidence-config">
+            <div class="config-item">
+                <div class="config-label">α (Cross-Model)</div>
+                <div class="config-value">${weights.alpha}</div>
+            </div>
+            <div class="config-item">
+                <div class="config-label">β (External)</div>
+                <div class="config-value">${weights.beta}</div>
+            </div>
+            <div class="config-item">
+                <div class="config-label">γ (Context)</div>
+                <div class="config-value">${weights.gamma}</div>
+            </div>
+        </div>
+        
+        <div class="claim-confidence-list">
+            ${claimDetailsHtml}
+        </div>
+        
+        <div class="final-confidence">
+            Overall Confidence = Σ(Confidence_i × Weight_i) / Σ(Weight_i) = ${overallConfidence.toFixed(3)}
+        </div>
+    `;
+}
+
+/**
  * Display summary statistics
  */
 function displaySummaryStats(summary) {
-    document.getElementById('total-claims').textContent = summary.high + summary.medium + summary.low;
+    document.getElementById('total-claims').textContent = summary.total_claims || (summary.high + summary.medium + summary.low);
     document.getElementById('high-risk').textContent = summary.high;
     document.getElementById('medium-risk').textContent = summary.medium;
     document.getElementById('low-risk').textContent = summary.low;
+    
+    // Add ClaimLLM statistics if available
+    if (summary.claimllm_model !== undefined) {
+        let claimllmStats = document.getElementById('claimllm-stats');
+        if (!claimllmStats) {
+            const statsContainer = document.querySelector('.stats-grid');
+            claimllmStats = document.createElement('div');
+            claimllmStats.id = 'claimllm-stats';
+            claimllmStats.className = 'stat-card claimllm-info';
+            statsContainer.appendChild(claimllmStats);
+        }
+        claimllmStats.innerHTML = `
+            <div class="claimllm-header">
+                <span class="stat-label">🤖 ClaimLLM Service</span>
+            </div>
+            <div class="claimllm-details">
+                <small>Model: ${summary.claimllm_model}</small><br>
+                <small>Processing: ${summary.claimllm_processing_time}ms</small><br>
+                <small>Confidence: ${(summary.claimllm_confidence * 100).toFixed(1)}%</small>
+            </div>
+        `;
+    }
+    
+    // Add External Verification statistics if available
+    if (summary.wikipedia_checks !== undefined) {
+        // Update or create External Verification stats display
+        let externalStats = document.getElementById('external-stats');
+        if (!externalStats) {
+            const statsContainer = document.querySelector('.stats-grid');
+            externalStats = document.createElement('div');
+            externalStats.id = 'external-stats';
+            externalStats.className = 'stat-card';
+            statsContainer.appendChild(externalStats);
+        }
+        externalStats.innerHTML = `
+            <span class="stat-number">${summary.wikipedia_checks}</span>
+            <span class="stat-label">External Checks</span>
+        `;
+    }
 }
 
 /**
@@ -136,7 +278,7 @@ function displayClaims(claims) {
     let html = '';
     
     claims.forEach(claim => {
-        const riskLevel = getRiskLevel(claim);
+        const riskLevel = getRiskLevel(claim) || 'Medium Risk';
         const riskClass = riskLevel.toLowerCase().replace(' ', '-');
         
         html += `
@@ -144,15 +286,22 @@ function displayClaims(claims) {
                 <div class="claim-header">
                     <span class="claim-id">${claim.id}</span>
                     <span class="risk-badge ${riskClass.split('-')[0]}">${riskLevel}</span>
+                    ${claim.is_wikipedia_checked ? '<span class="external-badge" title="Verified with External Sources">🌐 Ext</span>' : ''}
                 </div>
                 <div class="claim-text">${claim.claim}</div>
                 <div class="verification-grid">
-                    <div class="verifier-response ${claim.claude_verification.toLowerCase()}">
-                        <strong>Claude:</strong> ${claim.claude_verification}
+                    <div class="verifier-response ${(claim.llm1_verification || 'uncertain').toLowerCase()}">
+                        <strong>LLM1:</strong> ${claim.llm1_verification || 'Uncertain'}
                     </div>
-                    <div class="verifier-response ${claim.gemini_verification.toLowerCase()}">
-                        <strong>Gemini:</strong> ${claim.gemini_verification}
+                    <div class="verifier-response ${(claim.llm2_verification || 'uncertain').toLowerCase()}">
+                        <strong>LLM2:</strong> ${claim.llm2_verification || 'Uncertain'}
                     </div>
+                    ${claim.is_wikipedia_checked ? `
+                    <div class="verifier-response external ${claim.wikipedia_status ? claim.wikipedia_status.toLowerCase() : 'unclear'}">
+                        <strong>External:</strong> ${claim.wikipedia_status || 'Unclear'}
+                        ${claim.wikipedia_summary ? `<div class="external-summary">${claim.wikipedia_summary}</div>` : ''}
+                    </div>
+                    ` : ''}
                 </div>
             </div>
         `;
@@ -171,30 +320,75 @@ function displayClaims(claims) {
 
 /**
  * Get risk level from claim verification
+ * Now uses the backend's risk calculation which includes External verification
  */
 function getRiskLevel(claim) {
-    const claude = claim.claude_verification.toLowerCase();
-    const gemini = claim.gemini_verification.toLowerCase();
+    // Add debugging to see what's in the claim
+    console.log('getRiskLevel called with claim:', claim);
     
-    if (claude === 'no' && gemini === 'no') {
-        return 'High Risk';
-    } else if (claude === 'yes' && gemini === 'yes') {
-        return 'Low Risk';
-    } else {
-        return 'Medium Risk';
+    // If the backend provides a risk level, use it (includes External verification adjustment)
+    if (claim.final_risk_level && claim.final_risk_level !== null && claim.final_risk_level !== '') {
+        const riskMap = {
+            'low': 'Low Risk',
+            'medium': 'Medium Risk', 
+            'high': 'High Risk'
+        };
+        return riskMap[claim.final_risk_level] || 'Medium Risk';
     }
+    
+    // Fallback to original logic for backward compatibility
+    console.log('Using fallback logic for claim:', claim.id);
+    
+    // Safety checks for verification fields
+    if (!claim.llm1_verification || !claim.llm2_verification) {
+        console.warn('Missing verification fields in claim:', claim);
+        return 'Medium Risk'; // Safe fallback
+    }
+    
+    const llm1 = (claim.llm1_verification || 'uncertain').toLowerCase();
+    const llm2 = (claim.llm2_verification || 'uncertain').toLowerCase();
+    
+    // Base risk assessment
+    let baseRisk;
+    if (llm1 === 'no' && llm2 === 'no') {
+        baseRisk = 'high';
+    } else if (llm1 === 'yes' && llm2 === 'yes') {
+        baseRisk = 'low';
+    } else {
+        baseRisk = 'medium';
+    }
+    
+    // Adjust for External verification if checked
+    if (claim.is_wikipedia_checked && claim.wikipedia_status) {
+        const wikiStatus = (claim.wikipedia_status || 'unclear').toLowerCase();
+        if (wikiStatus === 'supports' && baseRisk === 'medium') {
+            baseRisk = 'low';
+        } else if (wikiStatus === 'contradicts') {
+            baseRisk = 'high';
+        }
+    }
+    
+    const riskMap = {
+        'low': 'Low Risk',
+        'medium': 'Medium Risk',
+        'high': 'High Risk'
+    };
+    
+    return riskMap[baseRisk] || 'Medium Risk';
 }
 
 /**
  * Display the verification graph
  */
 function displayGraph(graphData) {
+    console.log('Graph data received:', graphData);
     const container = document.getElementById('network-graph');
     
     // Clear any existing placeholder
     container.innerHTML = '';
     
     if (!graphData.nodes || graphData.nodes.length === 0) {
+        console.log('No graph nodes available');
         container.innerHTML = `
             <div class="graph-placeholder">
                 <p>🕸️ No graph data available</p>
@@ -236,12 +430,19 @@ function displayGraph(graphData) {
     const options = {
         physics: {
             enabled: physicsEnabled,
-            stabilization: { iterations: 100 },
+            stabilization: { 
+                iterations: 200,
+                updateInterval: 50
+            },
             barnesHut: {
                 gravitationalConstant: -2000,
                 springConstant: 0.001,
-                springLength: 200
-            }
+                springLength: 200,
+                damping: 0.9
+            },
+            maxVelocity: 20,
+            minVelocity: 0.1,
+            timestep: 0.3
         },
         layout: {
             improvedLayout: true
@@ -269,6 +470,11 @@ function displayGraph(graphData) {
     
     // Create network
     networkInstance = new vis.Network(container, data, options);
+    
+    // Stop physics after stabilization to prevent infinite animation
+    networkInstance.once('stabilizationIterationsDone', function() {
+        networkInstance.setOptions({ physics: false });
+    });
     
     // Add event listeners
     networkInstance.on('click', function(params) {

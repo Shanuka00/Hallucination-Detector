@@ -1,13 +1,13 @@
 """
-Simulated Claude and Gemini verifier models for claim verification
+Simulated LLM1 and LLM2 verifier models for claim verification
 """
 
 import re
 from typing import Literal
 
-def verify_with_claude(claim: str) -> Literal["Yes", "No", "Uncertain"]:
+def verify_with_llm1(claim: str) -> Literal["Yes", "No", "Uncertain"]:
     """
-    Simulate Claude's verification responses with domain knowledge
+    Simulate LLM1's verification responses with domain knowledge
     """
     claim_lower = claim.lower()
     
@@ -32,16 +32,25 @@ def verify_with_claude(claim: str) -> Literal["Yes", "No", "Uncertain"]:
     if "berlin" in claim_lower and ("born" in claim_lower or "birth" in claim_lower):
         return "No"  # Most famous historical figures weren't born in Berlin
     
-    # Einstein-related facts
+    # Einstein-related facts - Enhanced for comprehensive testing
     elif "einstein" in claim_lower:
-        if "1879" in claim:
-            return "Yes"  # Correct birth year
-        elif "munich" in claim_lower:
-            return "No"   # Einstein was born in Ulm, not Munich
-        elif "1922" in claim and "nobel" in claim_lower:
-            return "No"   # Einstein won Nobel in 1921, not 1922
-        elif "quantum mechanics" in claim_lower and "nobel" in claim_lower:
-            return "No"   # Won for photoelectric effect, not quantum mechanics
+        # Specific claim-by-claim verification for demo pattern: yes/yes, yes/no, no/no, yes/uncertain, uncertain/uncertain, yes/yes, yes/yes
+        if "born on march 14, 1879, in ulm, germany" in claim_lower:
+            return "Yes"  # Claim 1: yes/yes - Correct birth details
+        elif "nobel prize in physics in 1922" in claim_lower and "quantum mechanics" in claim_lower:
+            return "No"   # Claim 2: yes/no - Wrong year and reason for Nobel Prize
+        elif "born in munich, germany, in 1885" in claim_lower:
+            return "No"   # Claim 3: no/no - Wrong birth location and year
+        elif "general theory of relativity in 1915" in claim_lower:
+            return "Yes"  # Claim 4: yes/uncertain - Correct theory and year
+        elif "american citizen" in claim_lower and "swiss citizenship" in claim_lower:
+            return "Uncertain"  # Claim 5: uncertain/uncertain - Complex citizenship details
+        elif "god does not play dice" in claim_lower:
+            return "Yes"  # Claim 6: yes/yes - Famous correct quote
+        elif "died on april 18, 1955, in princeton" in claim_lower:
+            return "Yes"  # Claim 7: yes/yes - Correct death details
+        elif "brain was preserved" in claim_lower:
+            return "Yes"  # Claim 8: yes/yes - Correct fact about brain preservation
     
     # World War 2 facts
     elif "world war" in claim_lower or "ww2" in claim_lower:
@@ -72,16 +81,16 @@ def verify_with_claude(claim: str) -> Literal["Yes", "No", "Uncertain"]:
     
     return "Uncertain"
 
-def verify_with_gemini(claim: str) -> Literal["Yes", "No", "Uncertain"]:
+def verify_with_llm2(claim: str) -> Literal["Yes", "No", "Uncertain"]:
     """
-    Simulate Gemini's verification responses (sometimes agrees/disagrees with Claude)
+    Simulate LLM2's verification responses (sometimes agrees/disagrees with LLM1)
     """
     claim_lower = claim.lower()
     
-    # Newton-related facts (different perspective from Claude sometimes)
+    # Newton-related facts (different perspective from LLM1 sometimes)
     if "newton" in claim_lower or "he" in claim_lower:  # Handle pronoun references
         if "1643" in claim:
-            return "Yes"  # Agrees with Claude on birth year
+            return "Yes"  # Agrees with LLM1 on birth year
         elif "berlin" in claim_lower:
             return "No"   # Agrees Newton not born in Berlin
         elif "1687" in claim and ("gravity" in claim_lower or "gravitation" in claim_lower):
@@ -99,16 +108,25 @@ def verify_with_gemini(claim: str) -> Literal["Yes", "No", "Uncertain"]:
     if "berlin" in claim_lower and ("born" in claim_lower or "birth" in claim_lower):
         return "No"  # Most famous historical figures weren't born in Berlin
     
-    # Einstein-related facts
+    # Einstein-related facts - Enhanced for comprehensive testing (LLM2 perspective)
     elif "einstein" in claim_lower:
-        if "1879" in claim:
-            return "Yes"  # Agrees on birth year
-        elif "munich" in claim_lower:
-            return "No"   # Agrees Einstein not born in Munich
-        elif "1922" in claim and "nobel" in claim_lower:
-            return "Uncertain"  # Less certain about exact Nobel year
-        elif "princeton" in claim_lower and "1933" in claim:
-            return "Yes"  # Einstein did move to Princeton in 1933
+        # Specific claim-by-claim verification for demo pattern: yes/yes, yes/no, no/no, yes/uncertain, uncertain/uncertain, yes/yes, yes/yes
+        if "born on march 14, 1879, in ulm, germany" in claim_lower:
+            return "Yes"  # Claim 1: yes/yes - Agrees on correct birth details
+        elif "nobel prize in physics in 1922" in claim_lower and "quantum mechanics" in claim_lower:
+            return "No"   # Claim 2: yes/no - Disagrees, knows it was 1921 for photoelectric effect
+        elif "born in munich, germany, in 1885" in claim_lower:
+            return "No"   # Claim 3: no/no - Agrees this is wrong
+        elif "general theory of relativity in 1915" in claim_lower:
+            return "Uncertain"  # Claim 4: yes/uncertain - Less certain about exact year
+        elif "american citizen" in claim_lower and "swiss citizenship" in claim_lower:
+            return "Uncertain"  # Claim 5: uncertain/uncertain - Both unsure about citizenship details
+        elif "god does not play dice" in claim_lower:
+            return "Yes"  # Claim 6: yes/yes - Agrees on famous quote
+        elif "died on april 18, 1955, in princeton" in claim_lower:
+            return "Yes"  # Claim 7: yes/yes - Agrees on death details
+        elif "brain was preserved" in claim_lower:
+            return "Yes"  # Claim 8: yes/yes - Agrees on brain preservation
     
     # World War 2 facts
     elif "world war" in claim_lower:
@@ -146,12 +164,41 @@ def get_verification_explanation(claim: str, model: str, response: str) -> str:
     Generate explanation for why a model gave a particular verification response
     """
     explanations = {
-        ("claude", "Yes"): f"Claude verified this claim as factually accurate based on historical records.",
-        ("claude", "No"): f"Claude identified this claim as factually incorrect.",
-        ("claude", "Uncertain"): f"Claude could not definitively verify this claim due to insufficient evidence or conflicting sources.",
+        ("LLM1", "Yes"): f"LLM1 verified this claim as factually accurate based on historical records.",
+        ("LLM1", "No"): f"LLM1 identified this claim as factually incorrect.",
+        ("LLM1", "Uncertain"): f"LLM1 could not definitively verify this claim due to insufficient evidence or conflicting sources.",
         ("gemini", "Yes"): f"Gemini confirmed this claim matches established facts.",
         ("gemini", "No"): f"Gemini determined this claim contains factual errors.",
         ("gemini", "Uncertain"): f"Gemini expressed uncertainty about this claim's accuracy."
     }
     
     return explanations.get((model.lower(), response), f"{model} responded: {response}")
+    
+def bulk_verify_claims(claims: list[str]) -> list[str]:
+    """
+    Simulate a bulk API call that verifies all claims at once.
+    Returns a list of strings: "Yes", "No", or "Uncertain" for each claim.
+    """
+    results: list[str] = []
+    for claim in claims:
+        # Call both single-claim verifiers to simulate combined logic
+        resp1 = verify_with_llm1(claim)
+        resp2 = verify_with_llm2(claim)
+        if resp1 == resp2:
+            results.append(resp1)
+        else:
+            # If they disagree, mark as Uncertain
+            results.append("Uncertain")
+    return results
+
+def bulk_verify_with_llm1(claims: list[str]) -> list[str]:
+    """
+    Simulate a bulk call to LLM1 for verifying multiple claims.
+    """
+    return [verify_with_llm1(claim) for claim in claims]
+
+def bulk_verify_with_llm2(claims: list[str]) -> list[str]:
+    """
+    Simulate a bulk call to LLM2 for verifying multiple claims.
+    """
+    return [verify_with_llm2(claim) for claim in claims]
