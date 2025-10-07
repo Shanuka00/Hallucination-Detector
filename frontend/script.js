@@ -174,6 +174,15 @@ function displaySummaryStats(summary) {
     updateStat('uncertain-claims', safeSummary.uncertain ?? 0, '0');
 }
 
+function translateVerdict(backendVerdict) {
+    const verdictMap = {
+        'Yes': 'Verified',
+        'No': 'Risky Hallucination',
+        'Uncertain': 'Potential Hallucination'
+    };
+    return verdictMap[backendVerdict] || backendVerdict;
+}
+
 function displayClaims(claims) {
     displayDetailedClaims(claims);
     displaySummaryTable(claims);
@@ -208,9 +217,9 @@ function displayDetailedClaims(claims) {
         if (finalVerdict === 'Yes') {
             verdictBadge = '<span class="verdict-badge verified">✓ Verified</span>';
         } else if (finalVerdict === 'No') {
-            verdictBadge = '<span class="verdict-badge rejected">✗ Refuted</span>';
+            verdictBadge = '<span class="verdict-badge rejected">✗ Risky Hallucination</span>';
         } else {
-            verdictBadge = '<span class="verdict-badge uncertain">? Uncertain</span>';
+            verdictBadge = '<span class="verdict-badge uncertain">? Potential Hallucination</span>';
         }
 
         return `
@@ -223,19 +232,19 @@ function displayDetailedClaims(claims) {
                 <div class="claim-text">${claim.claim || ''}</div>
                 <div class="verification-grid">
                     <div class="verifier-response ${llm1.toLowerCase()}">
-                        <strong>${llm1Name}:</strong> ${llm1}
+                        <strong>${llm1Name}:</strong> ${translateVerdict(llm1)}
                     </div>
                     <div class="verifier-response ${llm2.toLowerCase()}">
-                        <strong>${llm2Name}:</strong> ${llm2}
+                        <strong>${llm2Name}:</strong> ${translateVerdict(llm2)}
                     </div>
                     ${votingUsed && llm3 ? `
                     <div class="verifier-response ${llm3.toLowerCase()} voting">
-                        <strong>${llm3Name} (Tiebreaker):</strong> ${llm3}
+                        <strong>${llm3Name} (Tiebreaker):</strong> ${translateVerdict(llm3)}
                     </div>
                     ` : ''}
                 </div>
                 <div class="final-verdict-row">
-                    <strong>Final Verdict:</strong> <span class="verdict-text ${verdictClass}">${finalVerdict}</span>
+                    <strong>Final Verdict:</strong> <span class="verdict-text ${verdictClass}">${translateVerdict(finalVerdict)}</span>
                 </div>
             </div>
         `;
@@ -290,7 +299,7 @@ function displaySummaryTable(claims) {
                             <td class="claim-id-cell">${claim.id || 'Claim'}</td>
                             <td class="claim-text-cell">${claim.claim || ''}</td>
                             <td class="verdict-cell">
-                                <span class="verdict-badge ${verdictClass}">${verdictIcon} ${finalVerdict}</span>
+                                <span class="verdict-badge ${verdictClass}">${verdictIcon} ${translateVerdict(finalVerdict)}</span>
                             </td>
                         </tr>
                     `;

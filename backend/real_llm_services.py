@@ -27,8 +27,8 @@ class RealLLMService:
         self.openai_client = openai.OpenAI(api_key=Config.OPENAI_API_KEY)
         
         genai.configure(api_key=Config.GOOGLE_API_KEY)
-        # Use the correct Gemini model name
-        self.gemini_model = genai.GenerativeModel('gemini-1.5-flash-latest')
+        # Use the correct Gemini model name - gemini-2.0-flash is the latest stable model
+        self.gemini_model = genai.GenerativeModel('gemini-2.0-flash')
         
         self.mistral_client = Mistral(api_key=Config.MISTRAL_API_KEY)
         
