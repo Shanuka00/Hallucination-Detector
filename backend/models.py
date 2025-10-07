@@ -23,6 +23,12 @@ class ClaimVerification(BaseModel):
     claim: str
     llm1_verification: str
     llm2_verification: str
+    llm1_name: Optional[str] = None  # Name of first verifier LLM
+    llm2_name: Optional[str] = None  # Name of second verifier LLM
+    llm3_name: Optional[str] = None  # Name of third verifier LLM (if voting used)
+    llm3_verification: Optional[str] = None  # Third LLM's verdict (if voting used)
+    voting_used: bool = False  # Whether 3-way voting was needed
+    final_verdict: str = "Uncertain"  # Final verdict after voting
     wikipedia_status: Optional[str] = "NotChecked"
     wikipedia_summary: Optional[str] = None
     is_wikipedia_checked: bool = False
@@ -30,13 +36,18 @@ class ClaimVerification(BaseModel):
     
     def get_risk_level(self) -> Literal["high", "medium", "low"]:
         """
-        Determine hallucination risk based on verifier agreement and Wikipedia check
+        Determine hallucination risk based on final verdict and Wikipedia check
         """
-        llm1 = self.llm1_verification.lower()
-        llm2 = self.llm2_verification.lower()
+        # Use final verdict from voting system
+        verdict = self.final_verdict.lower()
         
-        # Start with base risk assessment
-        base_risk = self._get_base_risk(llm1, llm2)
+        # Base risk from verdict
+        if verdict == "yes":
+            base_risk = "low"
+        elif verdict == "no":
+            base_risk = "high"
+        else:  # Uncertain
+            base_risk = "medium"
         
         # Apply Wikipedia adjustment if checked
         if self.is_wikipedia_checked and self.wikipedia_status:
@@ -45,7 +56,7 @@ class ClaimVerification(BaseModel):
         return base_risk
     
     def _get_base_risk(self, llm1: str, llm2: str) -> Literal["high", "medium", "low"]:
-        """Get base risk level from LLM verifiers"""
+        """Get base risk level from LLM verifiers (legacy method)"""
         # Both disagree (both say No) = High risk
         if llm1 == "no" and llm2 == "no":
             return "high"
