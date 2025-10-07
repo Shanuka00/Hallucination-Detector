@@ -232,14 +232,14 @@ function displayDetailedClaims(claims) {
                 <div class="claim-text">${claim.claim || ''}</div>
                 <div class="verification-grid">
                     <div class="verifier-response ${llm1.toLowerCase()}">
-                        <strong>${llm1Name}:</strong> ${translateVerdict(llm1)}
+                        <strong>${llm1Name}:</strong> ${llm1}
                     </div>
                     <div class="verifier-response ${llm2.toLowerCase()}">
-                        <strong>${llm2Name}:</strong> ${translateVerdict(llm2)}
+                        <strong>${llm2Name}:</strong> ${llm2}
                     </div>
                     ${votingUsed && llm3 ? `
                     <div class="verifier-response ${llm3.toLowerCase()} voting">
-                        <strong>${llm3Name} (Tiebreaker):</strong> ${translateVerdict(llm3)}
+                        <strong>${llm3Name} (Tiebreaker):</strong> ${llm3}
                     </div>
                     ` : ''}
                 </div>
