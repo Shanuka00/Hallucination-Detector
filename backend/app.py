@@ -74,6 +74,9 @@ async def analyze_hallucination(query: UserQuery) -> AnalysisResponse:
         if not claims_text:
             summary = {
                 "total_claims": 0,
+                "verified": 0,
+                "refuted": 0,
+                "uncertain": 0,
                 "extraction_model": "openai-gpt-4o-mini",
                 "target_model": target_model_label,
             }
@@ -107,6 +110,11 @@ async def analyze_hallucination(query: UserQuery) -> AnalysisResponse:
 
         # Step 4: Collect verification LLM names used
         verifier_llms = set()
+        # Count verdicts
+        verified_count = 0
+        refuted_count = 0
+        uncertain_count = 0
+        
         for claim in verified_claims:
             if claim.llm1_name:
                 verifier_llms.add(claim.llm1_name)
@@ -114,9 +122,21 @@ async def analyze_hallucination(query: UserQuery) -> AnalysisResponse:
                 verifier_llms.add(claim.llm2_name)
             if claim.llm3_name:
                 verifier_llms.add(claim.llm3_name)
+            
+            # Count based on final verdict
+            verdict = claim.final_verdict.lower() if claim.final_verdict else "uncertain"
+            if verdict == "yes":
+                verified_count += 1
+            elif verdict == "no":
+                refuted_count += 1
+            else:
+                uncertain_count += 1
         
         summary = {
             "total_claims": len(verified_claims),
+            "verified": verified_count,
+            "refuted": refuted_count,
+            "uncertain": uncertain_count,
             "extraction_model": "openai-gpt-4o-mini",
             "verifier_llms": list(verifier_llms),
             "target_model": target_model_label,
