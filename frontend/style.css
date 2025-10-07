@@ -163,6 +163,77 @@ header p {
     font-style: italic;
 }
 
+/* Verifier Info Section */
+.verifier-info-section {
+    margin-bottom: 20px;
+    padding: 15px;
+    background: linear-gradient(135deg, #f5f7fa 0%, #e9ecef 100%);
+    border-radius: 10px;
+    border: 2px solid #667eea;
+}
+
+.verifier-info-section h3 {
+    margin-bottom: 12px;
+    color: #667eea;
+    font-size: 1.1rem;
+}
+
+.verifier-badges {
+    display: flex;
+    gap: 15px;
+    flex-wrap: wrap;
+    margin-bottom: 10px;
+}
+
+.verifier-badge {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background: white;
+    padding: 12px 20px;
+    border-radius: 10px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    border: 2px solid #667eea;
+    min-width: 150px;
+}
+
+.verifier-number {
+    display: inline-block;
+    width: 28px;
+    height: 28px;
+    background: linear-gradient(45deg, #667eea, #764ba2);
+    color: white;
+    border-radius: 50%;
+    text-align: center;
+    line-height: 28px;
+    font-weight: bold;
+    font-size: 0.9rem;
+    margin-bottom: 8px;
+}
+
+.verifier-name {
+    font-weight: 700;
+    color: #333;
+    font-size: 1rem;
+    margin-bottom: 4px;
+}
+
+.verifier-role {
+    font-size: 0.8rem;
+    color: #666;
+    font-style: italic;
+}
+
+.verifier-note {
+    margin-top: 10px;
+    padding: 8px 12px;
+    background: white;
+    border-radius: 6px;
+    color: #555;
+    font-size: 0.9rem;
+    text-align: center;
+}
+
 /* Summary Stats */
 .summary-section h3 {
     margin-bottom: 15px;
@@ -272,6 +343,166 @@ header p {
 .claims-container {
     flex-grow: 1;
     overflow-y: auto;
+}
+
+/* Detailed Claim Cards */
+.claim-item {
+    border: 2px solid #e9ecef;
+    border-radius: 8px;
+    margin-bottom: 15px;
+    background: white;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.claim-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+.claim-item.yes {
+    border-color: #28a745;
+    background: #f0fff4;
+}
+
+.claim-item.no {
+    border-color: #dc3545;
+    background: #fff5f5;
+}
+
+.claim-item.uncertain {
+    border-color: #ffc107;
+    background: #fff8f0;
+}
+
+.claim-header {
+    padding: 15px;
+    border-bottom: 1px solid #e9ecef;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.claim-id {
+    font-weight: bold;
+    color: #495057;
+    font-size: 1rem;
+}
+
+.claim-text {
+    padding: 15px;
+    line-height: 1.6;
+    color: #333;
+    font-size: 0.95rem;
+}
+
+.verification-grid {
+    padding: 15px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+    background: rgba(0, 0, 0, 0.02);
+}
+
+.verification-grid:has(.verifier-response.voting) {
+    grid-template-columns: 1fr 1fr 1fr;
+}
+
+.verifier-response {
+    text-align: center;
+    padding: 12px;
+    border-radius: 6px;
+    font-weight: 500;
+    font-size: 0.9rem;
+    border: 2px solid transparent;
+}
+
+.verifier-response strong {
+    display: block;
+    margin-bottom: 5px;
+    color: #495057;
+}
+
+.verifier-response.yes {
+    background: #d4edda;
+    color: #155724;
+    border-color: #28a745;
+}
+
+.verifier-response.no {
+    background: #f8d7da;
+    color: #721c24;
+    border-color: #dc3545;
+}
+
+.verifier-response.uncertain {
+    background: #fff3cd;
+    color: #856404;
+    border-color: #ffc107;
+}
+
+.verifier-response.voting {
+    border: 2px solid #9c27b0;
+    background: #f3e5f5;
+    color: #6a1b9a;
+    font-weight: 600;
+}
+
+.final-verdict-row {
+    padding: 12px 15px;
+    background: rgba(0, 0, 0, 0.03);
+    border-top: 1px solid #e9ecef;
+    font-size: 1rem;
+    text-align: center;
+}
+
+.verdict-text {
+    font-weight: 700;
+    padding: 4px 10px;
+    border-radius: 4px;
+}
+
+.verdict-text.yes {
+    color: #155724;
+    background: #d4edda;
+}
+
+.verdict-text.no {
+    color: #721c24;
+    background: #f8d7da;
+}
+
+.verdict-text.uncertain {
+    color: #856404;
+    background: #fff3cd;
+}
+
+/* Summary Table Section (Below main panels) */
+.summary-table-section {
+    max-width: 1400px;
+    margin: 20px auto 0;
+    padding: 0 20px;
+}
+
+.summary-table-panel {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    border-radius: 15px;
+    padding: 25px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+}
+
+.summary-table-panel h2 {
+    font-size: 1.4rem;
+    margin-bottom: 20px;
+    color: #333;
+    border-bottom: 2px solid #f0f0f0;
+    padding-bottom: 10px;
+}
+
+.summary-table-container {
+    overflow-x: auto;
 }
 
 /* Claims Summary Table */
@@ -483,3 +714,23 @@ footer {
     color: #856404;
     border: 2px solid #ffc107;
 }
+
+.verdict-badge.rejected {
+    background: #f8d7da;
+    color: #721c24;
+    border: 2px solid #dc3545;
+}
+
+/* Voting Badge */
+.voting-badge {
+    padding: 6px 12px;
+    background: #e3f2fd;
+    color: #1976d2;
+    border-radius: 12px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    border: 2px solid #2196F3;
+    display: inline-block;
+    margin-left: 8px;
+}
+

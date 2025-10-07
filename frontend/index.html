@@ -30,6 +30,7 @@
                     <select id="target-llm">
                         <option value="mistral">Mistral (default)</option>
                         <option value="openai">OpenAI</option>
+                        <option value="anthropic">Anthropic Claude</option>
                         <option value="gemini">Gemini</option>
                         <option value="deepseek">DeepSeek</option>
                     </select>
@@ -40,6 +41,13 @@
                     <h3>Target LLM Response:</h3>
                     <div id="llm-response" class="response-box">
                         <p class="placeholder">Response will appear here...</p>
+                    </div>
+                </div>
+
+                <div class="verifier-info-section" id="verifier-info" style="display: none;">
+                    <h3>🔍 Verification LLMs Used:</h3>
+                    <div id="verifier-llms" class="verifier-llms-display">
+                        <p class="placeholder">Verifier LLMs will appear here...</p>
                     </div>
                 </div>
 
@@ -79,13 +87,23 @@
                     </div>
                 </div>
 
-                <div id="claims-table" class="claims-container">
+                <div id="claims-details" class="claims-container">
                     <div class="placeholder-claims">
                         <p>📊 Claim analysis will appear here after processing...</p>
                     </div>
                 </div>
             </div>
 
+        </div>
+
+        <!-- Summary Table Section (Below main panels) -->
+        <div class="summary-table-section" id="summary-table-section" style="display: none;">
+            <div class="panel summary-table-panel">
+                <h2>📋 Claims Summary Table</h2>
+                <div id="claims-summary-table" class="summary-table-container">
+                    <p class="placeholder">Summary table will appear here...</p>
+                </div>
+            </div>
         </div>
 
         <!-- Loading Overlay -->

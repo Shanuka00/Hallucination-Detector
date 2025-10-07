@@ -98,6 +98,7 @@ async function analyzeQuery() {
         currentAnalysisData = result;
 
         displayLLMResponse(result.llm_response || 'No response received from target model.');
+        displayVerifierLLMs(result.claims || []);
         displaySummaryStats(result.summary || {});
         displayClaims(result.claims || []);
     } catch (error) {
@@ -115,7 +116,47 @@ function displayLLMResponse(response) {
     responseElement.innerHTML = `<p>${response}</p>`;
 }
 
+function displayVerifierLLMs(claims) {
+    const verifierInfoSection = document.getElementById('verifier-info');
+    const verifierDisplay = document.getElementById('verifier-llms');
+    
+    if (!verifierInfoSection || !verifierDisplay || !claims || claims.length === 0) {
+        if (verifierInfoSection) verifierInfoSection.style.display = 'none';
+        return;
+    }
 
+    // Extract unique verifier LLM names from claims
+    const verifierLLMs = new Set();
+    claims.forEach(claim => {
+        if (claim.llm1_name) verifierLLMs.add(claim.llm1_name);
+        if (claim.llm2_name) verifierLLMs.add(claim.llm2_name);
+        if (claim.llm3_name) verifierLLMs.add(claim.llm3_name);
+    });
+
+    const llmArray = Array.from(verifierLLMs);
+    
+    if (llmArray.length > 0) {
+        verifierInfoSection.style.display = 'block';
+        verifierDisplay.innerHTML = `
+            <div class="verifier-badges">
+                ${llmArray.map((llm, index) => `
+                    <div class="verifier-badge">
+                        <span class="verifier-number">${index + 1}</span>
+                        <span class="verifier-name">${llm.toUpperCase()}</span>
+                        <span class="verifier-role">${index < 2 ? 'Primary Verifier' : 'Tiebreaker'}</span>
+                    </div>
+                `).join('')}
+            </div>
+            <p class="verifier-note">
+                ${llmArray.length === 2 ? 
+                    '✓ Primary verifiers agreed on all claims' : 
+                    '⚖️ Tiebreaker LLM used for contradicted claims'}
+            </p>
+        `;
+    } else {
+        verifierInfoSection.style.display = 'none';
+    }
+}
 
 function displaySummaryStats(summary) {
     const safeSummary = summary || {};
@@ -134,7 +175,12 @@ function displaySummaryStats(summary) {
 }
 
 function displayClaims(claims) {
-    const container = document.getElementById('claims-table');
+    displayDetailedClaims(claims);
+    displaySummaryTable(claims);
+}
+
+function displayDetailedClaims(claims) {
+    const container = document.getElementById('claims-details');
     if (!container) return;
 
     if (!claims || claims.length === 0) {
@@ -146,7 +192,73 @@ function displayClaims(claims) {
         return;
     }
 
-    // Create simplified table
+    const claimsHtml = claims.map((claim) => {
+        const finalVerdict = (claim.final_verdict || 'Uncertain');
+        const verdictClass = finalVerdict.toLowerCase();
+        const llm1 = (claim.llm1_verification || claim.llm1_result || 'Uncertain');
+        const llm2 = (claim.llm2_verification || claim.llm2_result || 'Uncertain');
+        const llm3 = claim.llm3_verification || claim.llm3_result;
+        const votingUsed = Boolean(claim.voting_used);
+
+        const llm1Name = (claim.llm1_name || 'LLM1').toUpperCase();
+        const llm2Name = (claim.llm2_name || 'LLM2').toUpperCase();
+        const llm3Name = claim.llm3_name ? claim.llm3_name.toUpperCase() : null;
+
+        let verdictBadge = '';
+        if (finalVerdict === 'Yes') {
+            verdictBadge = '<span class="verdict-badge verified">✓ Verified</span>';
+        } else if (finalVerdict === 'No') {
+            verdictBadge = '<span class="verdict-badge rejected">✗ Refuted</span>';
+        } else {
+            verdictBadge = '<span class="verdict-badge uncertain">? Uncertain</span>';
+        }
+
+        return `
+            <div class="claim-item ${verdictClass}" data-claim-id="${claim.id}">
+                <div class="claim-header">
+                    <span class="claim-id">${claim.id || 'Claim'}</span>
+                    ${verdictBadge}
+                    ${votingUsed ? '<span class="voting-badge" title="3-way voting used">🗳️ Voted</span>' : ''}
+                </div>
+                <div class="claim-text">${claim.claim || ''}</div>
+                <div class="verification-grid">
+                    <div class="verifier-response ${llm1.toLowerCase()}">
+                        <strong>${llm1Name}:</strong> ${llm1}
+                    </div>
+                    <div class="verifier-response ${llm2.toLowerCase()}">
+                        <strong>${llm2Name}:</strong> ${llm2}
+                    </div>
+                    ${votingUsed && llm3 ? `
+                    <div class="verifier-response ${llm3.toLowerCase()} voting">
+                        <strong>${llm3Name} (Tiebreaker):</strong> ${llm3}
+                    </div>
+                    ` : ''}
+                </div>
+                <div class="final-verdict-row">
+                    <strong>Final Verdict:</strong> <span class="verdict-text ${verdictClass}">${finalVerdict}</span>
+                </div>
+            </div>
+        `;
+    }).join('');
+
+    container.innerHTML = claimsHtml;
+}
+
+function displaySummaryTable(claims) {
+    const tableSection = document.getElementById('summary-table-section');
+    const tableContainer = document.getElementById('claims-summary-table');
+    
+    if (!tableSection || !tableContainer) return;
+
+    if (!claims || claims.length === 0) {
+        tableSection.style.display = 'none';
+        return;
+    }
+
+    // Show the section
+    tableSection.style.display = 'block';
+
+    // Create summary table
     const tableHtml = `
         <table class="claims-summary-table">
             <thead>
@@ -187,7 +299,7 @@ function displayClaims(claims) {
         </table>
     `;
 
-    container.innerHTML = tableHtml;
+    tableContainer.innerHTML = tableHtml;
 }
 
 

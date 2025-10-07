@@ -70,6 +70,18 @@ class RealLLMService:
             except Exception as exc:
                 print(f"Gemini target error: {exc}")
                 target_key = "mistral"
+        elif target_key == "anthropic":
+            try:
+                response = self.anthropic_client.messages.create(
+                    model="claude-3-haiku-20240307",
+                    max_tokens=500,
+                    temperature=0.7,
+                    messages=[{"role": "user", "content": prompt}]
+                )
+                return response.content[0].text
+            except Exception as exc:
+                print(f"Anthropic target error: {exc}")
+                target_key = "mistral"
         elif target_key == "deepseek":
             try:
                 response = self.deepseek_client.chat.completions.create(
@@ -307,7 +319,7 @@ etc."""
 
         try:
             response = self.anthropic_client.messages.create(
-                model="claude-3-5-sonnet-20241022",
+                model="claude-3-haiku-20240307",  # Using Haiku - faster and more cost-effective
                 max_tokens=200,
                 temperature=0.1,
                 messages=[
