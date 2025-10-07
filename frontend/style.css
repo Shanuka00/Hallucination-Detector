@@ -47,13 +47,9 @@ header p {
 /* Main Content Layout */
 .main-content {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: 1fr 1.5fr;
     gap: 20px;
     margin-bottom: 30px;
-}
-
-.graph-panel {
-    grid-column: 1 / -1;
 }
 
 /* Panel Styles */
@@ -102,6 +98,23 @@ header p {
     outline: none;
     border-color: #667eea;
     box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+#target-llm {
+    width: 100%;
+    padding: 10px;
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    font-size: 1rem;
+    background: white;
+    margin-top: 8px;
+    transition: border-color 0.3s ease;
+}
+
+#target-llm:focus {
+    outline: none;
+    border-color: #764ba2;
+    box-shadow: 0 0 0 3px rgba(118, 75, 162, 0.1);
 }
 
 #analyze-btn {
@@ -556,108 +569,6 @@ header p {
     overflow-y: auto;
 }
 
-/* Graph Panel */
-.graph-controls {
-    margin-bottom: 15px;
-    display: flex;
-    gap: 10px;
-    flex-wrap: wrap;
-}
-
-.graph-controls button,
-.graph-controls select {
-    padding: 8px 12px;
-    border: 2px solid #e9ecef;
-    border-radius: 6px;
-    background: white;
-    cursor: pointer;
-    transition: all 0.2s ease;
-}
-
-.graph-controls button:hover {
-    background: #f8f9fa;
-    transform: translateY(-1px);
-}
-
-.graph-container {
-    flex-grow: 1;
-    border: 2px solid #e9ecef;
-    border-radius: 8px;
-    position: relative;
-    min-height: 400px;
-    height: 400px;
-    background: #fafafa;
-    overflow: hidden;
-}
-
-.graph-placeholder {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    text-align: center;
-    color: #6c757d;
-}
-
-.graph-legend {
-    margin-top: 15px;
-    padding: 15px;
-    background: #f8f9fa;
-    border-radius: 8px;
-}
-
-.graph-legend h4 {
-    margin-bottom: 10px;
-    color: #495057;
-}
-
-.legend-items {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-}
-
-.legend-row {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    font-size: 0.9rem;
-}
-
-.node-example {
-    width: 16px;
-    height: 16px;
-    border-radius: 50%;
-    display: inline-block;
-}
-
-.node-example.low-risk {
-    background: #28a745;
-}
-
-.node-example.medium-risk {
-    background: #fd7e14;
-}
-
-.node-example.high-risk {
-    background: #dc3545;
-}
-
-.verifier-example {
-    width: 16px;
-    height: 16px;
-    border-radius: 3px;
-    display: inline-block;
-}
-
-.verifier-example.LLM1 {
-    background: #9c27b0;
-}
-
-.verifier-example.gemini {
-    background: #2196f3;
-}
-
 /* Loading Overlay */
 .loading-overlay {
     position: fixed;
@@ -766,10 +677,6 @@ footer {
         grid-template-columns: 1fr;
     }
     
-    .graph-controls {
-        flex-direction: column;
-    }
-    
     .legend {
         flex-direction: column;
         gap: 8px;
@@ -785,4 +692,87 @@ footer {
     color: #6c757d;
     font-style: italic;
     text-align: center;
+}
+
+/* Verdict Badge Styles */
+.verdict-badge {
+    padding: 6px 12px;
+    border-radius: 12px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    display: inline-block;
+}
+
+.verdict-badge.verified {
+    background: #d4edda;
+    color: #155724;
+    border: 2px solid #28a745;
+}
+
+.verdict-badge.rejected {
+    background: #f8d7da;
+    color: #721c24;
+    border: 2px solid #dc3545;
+}
+
+.verdict-badge.uncertain {
+    background: #fff3cd;
+    color: #856404;
+    border: 2px solid #ffc107;
+}
+
+/* Voting Badge */
+.voting-badge {
+    padding: 4px 10px;
+    background: #e3f2fd;
+    color: #1976d2;
+    border-radius: 10px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    border: 2px solid #2196F3;
+    display: inline-block;
+}
+
+/* Voting verifier styling */
+.verifier-response.voting {
+    border: 2px solid #9c27b0;
+    background: #f3e5f5;
+    color: #6a1b9a;
+    font-weight: 600;
+}
+
+/* Final Verdict Row */
+.final-verdict-row {
+    margin-top: 15px;
+    padding: 12px;
+    background: rgba(0, 0, 0, 0.03);
+    border-radius: 6px;
+    font-size: 1.05rem;
+    text-align: center;
+}
+
+.verdict-text {
+    font-weight: 700;
+    padding: 4px 8px;
+    border-radius: 4px;
+}
+
+.verdict-text.yes {
+    color: #155724;
+    background: #d4edda;
+}
+
+.verdict-text.no {
+    color: #721c24;
+    background: #f8d7da;
+}
+
+.verdict-text.uncertain {
+    color: #856404;
+    background: #fff3cd;
+}
+
+/* Adjust grid for voting (3 LLMs) */
+.verification-grid:has(.verifier-response.voting) {
+    grid-template-columns: 1fr 1fr 1fr;
 }

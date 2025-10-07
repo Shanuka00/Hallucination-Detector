@@ -7,20 +7,25 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
-from typing import List, Dict, Any
-import json
+from typing import List, Dict, Any, Optional
+import os
 
-# Import REAL services
 from real_llm_services import (
     get_target_response,
     extract_claims_with_llm,
-    verify_batch_with_gemini,
-    verify_batch_with_deepseek
 )
+from prioritized_voting import verify_with_prioritized_voting
 from multi_kg_service import MultiKGService
-from graph_builder import build_hallucination_graph
 from models import ClaimVerification
 from confidence_scorer import ConfidenceScorer
+
+# Map select box choices to concrete model identifiers
+TARGET_MODEL_LABELS: Dict[str, str] = {
+    "mistral": "mistral-small",
+    "openai": "o1-preview",
+    "gemini": "gemini-1.5-flash",
+    "deepseek": "deepseek-chat",
+}
 
 # Initialize services
 multi_kg_service = MultiKGService()
@@ -37,128 +42,147 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Mount static files for frontend
-import os
+# Serve the frontend for convenience
 frontend_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "frontend")
 app.mount("/static", StaticFiles(directory=frontend_path), name="static")
 
+
 class UserQuery(BaseModel):
     question: str
+    target_llm: Optional[str] = "mistral"
+
 
 class AnalysisResponse(BaseModel):
     original_question: str
     llm_response: str
     claims: List[ClaimVerification]
-    graph_data: Dict[str, Any]
-    summary: Dict[str, Any]  # Enhanced to include Wikipedia stats
-    confidence_analysis: Dict[str, Any]  # New: Detailed confidence scoring
+    summary: Dict[str, Any]
+    confidence_analysis: Dict[str, Any]
+
 
 @app.get("/")
-async def root():
+async def root() -> Dict[str, str]:
     return {"message": "Enhanced Hallucination Detection API is running"}
 
+
 @app.post("/analyze", response_model=AnalysisResponse)
-async def analyze_hallucination(query: UserQuery):
-    """
-    Enhanced endpoint using REAL APIs: Mistral + OpenAI + Gemini + Multi-KG
-    """
+async def analyze_hallucination(query: UserQuery) -> AnalysisResponse:
     try:
-        # Step 1: Get target LLM response (Mistral)
-        llm_response = get_target_response(query.question)
-        
+        target_choice = (query.target_llm or "mistral").lower()
+        target_model_label = TARGET_MODEL_LABELS.get(target_choice, TARGET_MODEL_LABELS["mistral"])
+
+        # Step 1: Get response from the selected target LLM
+        llm_response = get_target_response(query.question, target_choice)
+
         # Step 2: Extract factual claims using OpenAI
         claims_text = extract_claims_with_llm(llm_response)
-        
+
         if not claims_text:
-            # Fallback: no claims found
+            summary = {
+                "high": 0,
+                "medium": 0,
+                "low": 0,
+                "wikipedia_checks": 0,
+                "total_claims": 0,
+                "overall_confidence": 0.0,
+                "extraction_model": "openai-gpt-4o-mini",
+                "target_model": target_model_label,
+            }
+            fallback_confidence = {
+                "overall_confidence": 0.0,
+                "total_claims": 0,
+                "claim_details": [],
+                "weights_config": {"alpha": 0.4, "beta": 0.4, "gamma": 0.2},
+            }
             return AnalysisResponse(
                 original_question=query.question,
                 llm_response=llm_response,
                 claims=[],
-                graph_data={"nodes": [], "edges": [], "metrics": {}},
-                summary={
-                    "high": 0, "medium": 0, "low": 0, 
-                    "wikipedia_checks": 0,
-                    "total_claims": 0,
-                    "overall_confidence": 0.0
-                },
-                confidence_analysis={
-                    "overall_confidence": 0.0,
-                    "total_claims": 0,
-                    "claim_details": [],
-                    "weights_config": {"alpha": 0.4, "beta": 0.4, "gamma": 0.2}
-                }
+                summary=summary,
+                confidence_analysis=fallback_confidence,
             )
-        
-        # Step 3: Verify claims with both real LLMs
-        llm1_verifications = verify_batch_with_gemini(claims_text)  # Gemini (LLM1)
-        llm2_verifications = verify_batch_with_deepseek(claims_text)  # DeepSeek (LLM2)
-        
-        verified_claims = []
-        for i, claim in enumerate(claims_text):
-            llm1_response = llm1_verifications[i] if i < len(llm1_verifications) else "Uncertain"
-            llm2_response = llm2_verifications[i] if i < len(llm2_verifications) else "Uncertain"
-            
-            verification = ClaimVerification(
-                id=f"C{i+1}",
-                claim=claim,
-                llm1_verification=llm1_response,
-                llm2_verification=llm2_response
+
+        # Step 3: Verify claims with prioritized voting system
+        verification_results = verify_with_prioritized_voting(claims_text, target_choice)
+
+        verified_claims: List[ClaimVerification] = []
+        for index, result in enumerate(verification_results):
+            verified_claims.append(
+                ClaimVerification(
+                    id=f"C{index + 1}",
+                    claim=result["claim"],
+                    llm1_verification=result["llm1_result"],
+                    llm2_verification=result["llm2_result"],
+                    llm1_name=result["llm1_name"],
+                    llm2_name=result["llm2_name"],
+                    llm3_name=result["llm3_name"],
+                    llm3_verification=result["llm3_result"],
+                    voting_used=result["voting_used"],
+                    final_verdict=result["final_verdict"],
+                )
             )
-            verified_claims.append(verification)
-        
-        # Step 4: Check medium-risk claims with Multi-KG external verification
+
+        # Step 4: External verification with Multi-KG for medium-risk items
         wikipedia_checks_count = 0
         for claim_verification in verified_claims:
             if claim_verification.should_check_wikipedia():
-                # Perform Multi-KG external verification for medium-risk claims
-                external_result = multi_kg_service.verify_claim(claim_verification.claim)
-                
+                try:
+                    external_result = multi_kg_service.verify_claim(claim_verification.claim)
+                except Exception:
+                    external_result = "Unclear"
+
                 claim_verification.wikipedia_status = external_result
                 claim_verification.wikipedia_summary = f"Multi-KG consensus: {external_result}"
                 claim_verification.is_wikipedia_checked = True
                 wikipedia_checks_count += 1
-        
-        # Step 6: Calculate advanced confidence scores
+
+        # Step 5: Compute overall confidence metrics
         overall_confidence, confidence_analysis = confidence_scorer.calculate_overall_confidence(verified_claims)
-        
-        # Step 7: Build hallucination graph with enhanced data
-        graph_data = build_hallucination_graph(verified_claims)
-        
-        # Step 8: Generate enhanced summary statistics
+
+        # Step 6: Summarise risk buckets and metadata
         risk_counts = {"high": 0, "medium": 0, "low": 0}
         for claim in verified_claims:
-            risk_level = claim.get_risk_level()
-            risk_counts[risk_level] += 1
+            risk_counts[claim.get_risk_level()] += 1
+
+        # Collect verification LLM names used
+        verifier_llms = set()
+        for claim in verified_claims:
+            if claim.llm1_name:
+                verifier_llms.add(claim.llm1_name)
+            if claim.llm2_name:
+                verifier_llms.add(claim.llm2_name)
+            if claim.llm3_name:
+                verifier_llms.add(claim.llm3_name)
         
-        # Add Real API statistics
-        enhanced_summary = {
+        summary = {
             **risk_counts,
             "wikipedia_checks": wikipedia_checks_count,
             "total_claims": len(verified_claims),
             "overall_confidence": overall_confidence,
-            "extraction_model": "gpt-3.5-turbo",
-            "llm1_model": "o1-preview", 
-            "llm2_model": "gemini-1.5-flash",
-            "target_model": "mistral-small"
+            "extraction_model": "openai-gpt-4o-mini",
+            "verifier_llms": list(verifier_llms),
+            "target_model": target_model_label,
+            "voting_enabled": True,
         }
-        
+
         return AnalysisResponse(
             original_question=query.question,
             llm_response=llm_response,
             claims=verified_claims,
-            graph_data=graph_data,
-            summary=enhanced_summary,
-            confidence_analysis=confidence_analysis
+            summary=summary,
+            confidence_analysis=confidence_analysis,
         )
-    
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Analysis failed: {str(e)}")
+
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=f"Analysis failed: {exc}")
+
 
 @app.get("/health")
-async def health_check():
+async def health_check() -> Dict[str, str]:
     return {"status": "healthy", "service": "hallucination-detector"}
+
 
 if __name__ == "__main__":
     import uvicorn
+
     uvicorn.run(app, host="0.0.0.0", port=8001)

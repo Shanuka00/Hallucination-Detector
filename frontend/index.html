@@ -5,16 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Hallucination Detection System</title>
     <link rel="stylesheet" href="style.css">
-    <!-- Vis.js for network visualization - using older stable version -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/vis/4.21.0/vis.min.css">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/vis/4.21.0/vis.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
     <div class="container">
         <header>
             <h1>🧠 LLM Hallucination Detection System</h1>
-            <p>Multi-LLM verification using graph-based claim analysis</p>
+            <p>Multi-LLM verification with confidence scoring and claim auditing</p>
         </header>
 
         <div class="main-content">
@@ -29,6 +26,13 @@
                         placeholder="e.g., Tell me about Isaac Newton"
                         rows="3"
                     ></textarea>
+                    <label for="target-llm">Select target LLM:</label>
+                    <select id="target-llm">
+                        <option value="mistral">Mistral (default)</option>
+                        <option value="openai">OpenAI</option>
+                        <option value="gemini">Gemini</option>
+                        <option value="deepseek">DeepSeek</option>
+                    </select>
                     <button id="analyze-btn" onclick="analyzeQuery()">🔍 Analyze Hallucinations</button>
                 </div>
 
@@ -91,60 +95,13 @@
                 </div>
             </div>
 
-            <!-- Right Panel: Graph Visualization -->
-            <div class="panel graph-panel">
-                <h2>📈 Verification Graph</h2>
-                
-                <div class="graph-controls">
-                    <button onclick="resetGraphView()">🔄 Reset View</button>
-                    <button onclick="togglePhysics()">⚡ Toggle Physics</button>
-                    <select id="layout-select" onchange="changeLayout()">
-                        <option value="force-directed">Force Directed</option>
-                        <option value="hierarchical">Hierarchical</option>
-                        <option value="circular">Circular</option>
-                    </select>
-                </div>
-
-                <div id="network-graph" class="graph-container">
-                    <div class="graph-placeholder">
-                        <p>🕸️ Verification graph will appear here</p>
-                        <small>Nodes represent claims, edges show verifier agreement</small>
-                    </div>
-                </div>
-
-                <div class="graph-legend">
-                    <h4>Graph Legend:</h4>
-                    <div class="legend-items">
-                        <div class="legend-row">
-                            <span class="node-example low-risk"></span>
-                            <span>Low Risk Claim</span>
-                        </div>
-                        <div class="legend-row">
-                            <span class="node-example medium-risk"></span>
-                            <span>Medium Risk Claim</span>
-                        </div>
-                        <div class="legend-row">
-                            <span class="node-example high-risk"></span>
-                            <span>High Risk Claim</span>
-                        </div>
-                        <div class="legend-row">
-                            <span class="verifier-example LLM1"></span>
-                            <span>LLM1 Verifier</span>
-                        </div>
-                        <div class="legend-row">
-                            <span class="verifier-example gemini"></span>
-                            <span>LLM2 Verifier</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
         </div>
 
         <!-- Loading Overlay -->
         <div id="loading-overlay" class="loading-overlay" style="display: none;">
             <div class="loading-content">
                 <div class="spinner"></div>
-                <p>Analyzing claims and building verification graph...</p>
+                <p>Analyzing claims across selected verifiers...</p>
             </div>
         </div>
 
