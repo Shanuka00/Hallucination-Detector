@@ -27,7 +27,8 @@ class RealLLMService:
         self.openai_client = openai.OpenAI(api_key=Config.OPENAI_API_KEY)
         
         genai.configure(api_key=Config.GOOGLE_API_KEY)
-        self.gemini_model = genai.GenerativeModel('gemini-1.5-flash')
+        # Use the correct Gemini model name - gemini-2.0-flash is the latest stable model
+        self.gemini_model = genai.GenerativeModel('gemini-2.0-flash')
         
         self.mistral_client = Mistral(api_key=Config.MISTRAL_API_KEY)
         
@@ -68,6 +69,18 @@ class RealLLMService:
                 return response.text
             except Exception as exc:
                 print(f"Gemini target error: {exc}")
+                target_key = "mistral"
+        elif target_key == "anthropic":
+            try:
+                response = self.anthropic_client.messages.create(
+                    model="claude-3-haiku-20240307",
+                    max_tokens=500,
+                    temperature=0.7,
+                    messages=[{"role": "user", "content": prompt}]
+                )
+                return response.content[0].text
+            except Exception as exc:
+                print(f"Anthropic target error: {exc}")
                 target_key = "mistral"
         elif target_key == "deepseek":
             try:
@@ -306,7 +319,7 @@ etc."""
 
         try:
             response = self.anthropic_client.messages.create(
-                model="claude-3-5-sonnet-20241022",
+                model="claude-3-haiku-20240307",  # Using Haiku - faster and more cost-effective
                 max_tokens=200,
                 temperature=0.1,
                 messages=[

@@ -3,15 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hallucination Detection System</title>
+    <title>Prioritized Cross-Model Verification System for Hallucination Detection in Black-Box Large Language Models</title>
     <link rel="stylesheet" href="style.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
     <div class="container">
         <header>
-            <h1>🧠 LLM Hallucination Detection System</h1>
-            <p>Multi-LLM verification with confidence scoring and claim auditing</p>
+            <h1>🧠 Prioritized Cross-Model Verification System</h1>
+            <p>A System for Hallucination Detection in Black-Box Large Language Models</p>
         </header>
 
         <div class="main-content">
@@ -30,10 +30,11 @@
                     <select id="target-llm">
                         <option value="mistral">Mistral (default)</option>
                         <option value="openai">OpenAI</option>
+                        <option value="anthropic">Anthropic Claude</option>
                         <option value="gemini">Gemini</option>
                         <option value="deepseek">DeepSeek</option>
                     </select>
-                    <button id="analyze-btn" onclick="analyzeQuery()">🔍 Analyze Hallucinations</button>
+                    <button id="analyze-btn">🔍 Analyze Hallucinations</button>
                 </div>
 
                 <div class="response-section">
@@ -43,12 +44,10 @@
                     </div>
                 </div>
 
-                <div class="summary-section">
-                    <h3>Confidence Analysis:</h3>
-                    <div id="confidence-analysis" class="confidence-container">
-                        <div class="placeholder-confidence">
-                            <p>🎯 Confidence scoring will appear here...</p>
-                        </div>
+                <div class="verifier-info-section" id="verifier-info" style="display: none;">
+                    <h3>🔍 Verification LLMs Used:</h3>
+                    <div id="verifier-llms" class="verifier-llms-display">
+                        <p class="placeholder">Verifier LLMs will appear here...</p>
                     </div>
                 </div>
 
@@ -59,17 +58,17 @@
                             <span class="stat-number" id="total-claims">0</span>
                             <span class="stat-label">Total Claims</span>
                         </div>
-                        <div class="stat-card high-risk">
-                            <span class="stat-number" id="high-risk">0</span>
-                            <span class="stat-label">High Risk</span>
+                        <div class="stat-card verified">
+                            <span class="stat-number" id="verified-claims">0</span>
+                            <span class="stat-label">Verified</span>
                         </div>
-                        <div class="stat-card medium-risk">
-                            <span class="stat-number" id="medium-risk">0</span>
-                            <span class="stat-label">Medium Risk</span>
+                        <div class="stat-card refuted">
+                            <span class="stat-number" id="refuted-claims">0</span>
+                            <span class="stat-label">Risky Hallucination</span>
                         </div>
-                        <div class="stat-card low-risk">
-                            <span class="stat-number" id="low-risk">0</span>
-                            <span class="stat-label">Low Risk</span>
+                        <div class="stat-card uncertain">
+                            <span class="stat-number" id="uncertain-claims">0</span>
+                            <span class="stat-label">Potential Hallucination</span>
                         </div>
                     </div>
                 </div>
@@ -80,21 +79,31 @@
                 <h2>🔍 Claim Verification</h2>
                 
                 <div class="claims-header">
-                    <span>Factual claims extracted and verified by multiple LLMs</span>
+                    <span>Factual claims extracted and verified by prioritized LLMs</span>
                     <div class="legend">
-                        <span class="legend-item high-risk">🔴 High Risk</span>
-                        <span class="legend-item medium-risk">🟡 Medium Risk</span>
-                        <span class="legend-item low-risk">🟢 Low Risk</span>
+                        <span class="legend-item verified">✅ Verified</span>
+                        <span class="legend-item refuted">❌ Refuted</span>
+                        <span class="legend-item uncertain">❓ Uncertain</span>
                     </div>
                 </div>
 
-                <div id="claims-table" class="claims-container">
+                <div id="claims-details" class="claims-container">
                     <div class="placeholder-claims">
                         <p>📊 Claim analysis will appear here after processing...</p>
                     </div>
                 </div>
             </div>
 
+        </div>
+
+        <!-- Summary Table Section (Below main panels) -->
+        <div class="summary-table-section" id="summary-table-section" style="display: none;">
+            <div class="panel summary-table-panel">
+                <h2>📋 Claims Summary Table</h2>
+                <div id="claims-summary-table" class="summary-table-container">
+                    <p class="placeholder">Summary table will appear here...</p>
+                </div>
+            </div>
         </div>
 
         <!-- Loading Overlay -->
@@ -116,8 +125,8 @@
     </div>
 
     <footer>
-        <p>🔬 Hallucination Detection System - Research Project 2025</p>
-        <p>Multi-LLM verification using graph-based claim analysis</p>
+        <p>🔬 Prioritized Cross-Model Verification System for Hallucination Detection in Black-Box Large Language Models</p>
+        <p>Research Project 2025</p>
     </footer>
 
     <script src="script.js"></script>

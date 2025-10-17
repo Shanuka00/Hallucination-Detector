@@ -1,6 +1,6 @@
 """
 Hallucination Detection Web Application - Main FastAPI Backend
-Enhanced with REAL LLM APIs and Multi-KG verification
+Simplified version with prioritized LLM voting
 """
 
 from fastapi import FastAPI, HTTPException
@@ -15,9 +15,7 @@ from real_llm_services import (
     extract_claims_with_llm,
 )
 from prioritized_voting import verify_with_prioritized_voting
-from multi_kg_service import MultiKGService
 from models import ClaimVerification
-from confidence_scorer import ConfidenceScorer
 
 # Map select box choices to concrete model identifiers
 TARGET_MODEL_LABELS: Dict[str, str] = {
@@ -26,10 +24,6 @@ TARGET_MODEL_LABELS: Dict[str, str] = {
     "gemini": "gemini-1.5-flash",
     "deepseek": "deepseek-chat",
 }
-
-# Initialize services
-multi_kg_service = MultiKGService()
-confidence_scorer = ConfidenceScorer(alpha=0.4, beta=0.4, gamma=0.2)
 
 app = FastAPI(title="Enhanced Hallucination Detection API", version="2.0.0")
 
@@ -79,27 +73,19 @@ async def analyze_hallucination(query: UserQuery) -> AnalysisResponse:
 
         if not claims_text:
             summary = {
-                "high": 0,
-                "medium": 0,
-                "low": 0,
-                "wikipedia_checks": 0,
                 "total_claims": 0,
-                "overall_confidence": 0.0,
+                "verified": 0,
+                "refuted": 0,
+                "uncertain": 0,
                 "extraction_model": "openai-gpt-4o-mini",
                 "target_model": target_model_label,
-            }
-            fallback_confidence = {
-                "overall_confidence": 0.0,
-                "total_claims": 0,
-                "claim_details": [],
-                "weights_config": {"alpha": 0.4, "beta": 0.4, "gamma": 0.2},
             }
             return AnalysisResponse(
                 original_question=query.question,
                 llm_response=llm_response,
                 claims=[],
                 summary=summary,
-                confidence_analysis=fallback_confidence,
+                confidence_analysis={},
             )
 
         # Step 3: Verify claims with prioritized voting system
@@ -122,30 +108,13 @@ async def analyze_hallucination(query: UserQuery) -> AnalysisResponse:
                 )
             )
 
-        # Step 4: External verification with Multi-KG for medium-risk items
-        wikipedia_checks_count = 0
-        for claim_verification in verified_claims:
-            if claim_verification.should_check_wikipedia():
-                try:
-                    external_result = multi_kg_service.verify_claim(claim_verification.claim)
-                except Exception:
-                    external_result = "Unclear"
-
-                claim_verification.wikipedia_status = external_result
-                claim_verification.wikipedia_summary = f"Multi-KG consensus: {external_result}"
-                claim_verification.is_wikipedia_checked = True
-                wikipedia_checks_count += 1
-
-        # Step 5: Compute overall confidence metrics
-        overall_confidence, confidence_analysis = confidence_scorer.calculate_overall_confidence(verified_claims)
-
-        # Step 6: Summarise risk buckets and metadata
-        risk_counts = {"high": 0, "medium": 0, "low": 0}
-        for claim in verified_claims:
-            risk_counts[claim.get_risk_level()] += 1
-
-        # Collect verification LLM names used
+        # Step 4: Collect verification LLM names used
         verifier_llms = set()
+        # Count verdicts
+        verified_count = 0
+        refuted_count = 0
+        uncertain_count = 0
+        
         for claim in verified_claims:
             if claim.llm1_name:
                 verifier_llms.add(claim.llm1_name)
@@ -153,12 +122,21 @@ async def analyze_hallucination(query: UserQuery) -> AnalysisResponse:
                 verifier_llms.add(claim.llm2_name)
             if claim.llm3_name:
                 verifier_llms.add(claim.llm3_name)
+            
+            # Count based on final verdict
+            verdict = claim.final_verdict.lower() if claim.final_verdict else "uncertain"
+            if verdict == "yes":
+                verified_count += 1
+            elif verdict == "no":
+                refuted_count += 1
+            else:
+                uncertain_count += 1
         
         summary = {
-            **risk_counts,
-            "wikipedia_checks": wikipedia_checks_count,
             "total_claims": len(verified_claims),
-            "overall_confidence": overall_confidence,
+            "verified": verified_count,
+            "refuted": refuted_count,
+            "uncertain": uncertain_count,
             "extraction_model": "openai-gpt-4o-mini",
             "verifier_llms": list(verifier_llms),
             "target_model": target_model_label,
@@ -170,7 +148,7 @@ async def analyze_hallucination(query: UserQuery) -> AnalysisResponse:
             llm_response=llm_response,
             claims=verified_claims,
             summary=summary,
-            confidence_analysis=confidence_analysis,
+            confidence_analysis={},  # Empty, not used anymore
         )
 
     except Exception as exc:
