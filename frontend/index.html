@@ -106,6 +106,90 @@
             </div>
         </div>
 
+        <!-- Manual Annotation Section for TruthfulQA Evaluation -->
+        <div class="manual-annotation-section" id="annotation-section" style="display: none;">
+            <div class="panel annotation-panel">
+                <h2>📝 Manual Annotation for Evaluation</h2>
+                <p class="annotation-instructions">
+                    Mark each claim as <strong>Correct (✓)</strong> or <strong>Incorrect (✗)</strong> based on ground truth from TruthfulQA.
+                </p>
+                
+                <div class="question-info" id="question-info" style="display: none;">
+                    <div class="info-row">
+                        <span class="label">Question ID:</span>
+                        <span id="current-question-id">-</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="label">Target Model:</span>
+                        <span id="current-target-model">-</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="label">Total Claims:</span>
+                        <span id="total-claims-count">-</span>
+                    </div>
+                </div>
+
+                <div class="annotation-table-container">
+                    <table class="annotation-table">
+                        <thead>
+                            <tr>
+                                <th style="width: 10%;">Claim ID</th>
+                                <th style="width: 40%;">Claim Text</th>
+                                <th style="width: 20%;">System Verdict</th>
+                                <th style="width: 30%;">Manual Annotation</th>
+                            </tr>
+                        </thead>
+                        <tbody id="annotation-tbody">
+                            <!-- Claims populated by JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+                
+                <div class="annotation-actions">
+                    <button id="save-annotations-btn" class="btn btn-primary" disabled>
+                        💾 Save Annotations (0/0)
+                    </button>
+                    <button id="calculate-metrics-btn" class="btn btn-success" disabled>
+                        📊 Calculate Metrics
+                    </button>
+                    <button id="clear-annotations-btn" class="btn btn-secondary">
+                        🔄 Clear All
+                    </button>
+                </div>
+                
+                <div class="evaluation-results" id="eval-results" style="display: none;">
+                    <h3>📈 Evaluation Metrics for This Question</h3>
+                    <div class="metrics-grid">
+                        <div class="metric-card">
+                            <span class="metric-label">Precision</span>
+                            <span class="metric-value" id="precision-value">-</span>
+                        </div>
+                        <div class="metric-card">
+                            <span class="metric-label">Recall</span>
+                            <span class="metric-value" id="recall-value">-</span>
+                        </div>
+                        <div class="metric-card">
+                            <span class="metric-label">F1-Score</span>
+                            <span class="metric-value" id="f1-value">-</span>
+                        </div>
+                        <div class="metric-card">
+                            <span class="metric-label">Accuracy</span>
+                            <span class="metric-value" id="accuracy-value">-</span>
+                        </div>
+                    </div>
+                    <div class="confusion-matrix" id="confusion-matrix">
+                        <h4>Confusion Matrix</h4>
+                        <div class="cm-grid">
+                            <div class="cm-cell"><strong>TP:</strong> <span id="cm-tp">0</span></div>
+                            <div class="cm-cell"><strong>FP:</strong> <span id="cm-fp">0</span></div>
+                            <div class="cm-cell"><strong>TN:</strong> <span id="cm-tn">0</span></div>
+                            <div class="cm-cell"><strong>FN:</strong> <span id="cm-fn">0</span></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!-- Loading Overlay -->
         <div id="loading-overlay" class="loading-overlay" style="display: none;">
             <div class="loading-content">
